@@ -30,7 +30,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-docker-compose:3.2.4")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
+    runtimeOnly("org.springdoc:springdoc-openapi-kotlin:1.8.0")
     runtimeOnly("com.mysql:mysql-connector-j")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
