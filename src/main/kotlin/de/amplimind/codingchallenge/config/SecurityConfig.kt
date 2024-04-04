@@ -34,8 +34,8 @@ class SecurityConfig {
             .csrf { it.disable() } // TODO Enable CSRF
             .authorizeHttpRequests {
                 it.requestMatchers("/v1/hello/**", "/login").permitAll()
-                    // TODO OPEN_API paths should be made restricted (authenticated) later
-                    .requestMatchers(*OPEN_API_PATHS.map { path -> AntPathRequestMatcher(path) }.toTypedArray()).permitAll()
+                    // TODO OPEN_API paths should be made restricted (authenticated) later (only for admin)
+                    .requestMatchers(*OPEN_API_PATHS).permitAll()
             }
             .build()
     }
