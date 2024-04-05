@@ -7,17 +7,36 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 
 @Configuration
 @EnableWebSecurity
 class SecurityConfig {
+    companion object {
+        val OPEN_API_PATHS =
+            arrayOf(
+                "/v3/api-docs",
+                "/v3/api-docs/**",
+                "/swagger-resources/",
+                "/swagger-resources/**",
+                "/configuration/ui",
+                "/webjars/**",
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/v3/api-docs/swagger-config",
+                "/v3/api-docs/public-api",
+            )
+    }
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         return http
-            .authorizeHttpRequests {
-                it.requestMatchers("/v1/hello/**").permitAll()
-            }
             .csrf { it.disable() } // TODO Enable CSRF
+            .authorizeHttpRequests {
+                it.requestMatchers("/v1/hello/**", "/login").permitAll()
+                    // TODO OPEN_API paths should be made restricted (authenticated) later (only for admin)
+                    .requestMatchers(*OPEN_API_PATHS).permitAll()
+            }
             .build()
     }
 
