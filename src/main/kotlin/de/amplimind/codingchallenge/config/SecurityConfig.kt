@@ -7,6 +7,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
@@ -36,7 +39,19 @@ class SecurityConfig {
                     // TODO OPEN_API paths should be made restricted (authenticated) later (only for admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
             }
+            .cors{ corsConfigurationSource() }
             .build()
+    }
+
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource   {
+        val cors = CorsConfiguration()
+        cors.allowedOriginPatterns = listOf("http://localhost:*") // todo: change to frontend URL
+        cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
+        cors.allowedHeaders = listOf("*") // todo: change to specific headers
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", cors)
+        return source
     }
 
     @Bean
