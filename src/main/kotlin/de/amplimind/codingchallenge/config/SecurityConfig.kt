@@ -1,11 +1,12 @@
 package de.amplimind.codingchallenge.config
 
+import de.amplimind.codingchallenge.model.UserRole
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
@@ -13,7 +14,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig {
+class SecurityConfig(
+    private val authenticationProvider: AuthenticationProvider,
+    private val authenticationFilter: AuthenticationFilter,
+) {
     companion object {
         val OPEN_API_PATHS =
             arrayOf(
@@ -28,6 +32,8 @@ class SecurityConfig {
                 "/v3/api-docs/swagger-config",
                 "/v3/api-docs/public-api",
             )
+
+        const val ADMIN_PATH = "/v1/admin/"
     }
 
     @Bean
@@ -35,11 +41,19 @@ class SecurityConfig {
         return http
             .csrf { it.disable() } // TODO Enable CSRF
             .authorizeHttpRequests {
-                it.requestMatchers("/v1/hello/**", "/login").permitAll()
-                    // TODO OPEN_API paths should be made restricted (authenticated) later (only for admin)
+                it.requestMatchers("/v1/hello/**", "/v1/auth/**", "/whoami").permitAll()
+                    // TODO OPEN_API should be secured in the end (only admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
+
+                it.requestMatchers("${ADMIN_PATH}**").hasRole(UserRole.ADMIN.name)
+                it.requestMatchers("/login").permitAll().anyRequest().authenticated()
+            }
+            .authenticationProvider(authenticationProvider)
+            .sessionManagement {
+                it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             }
             .cors { corsConfigurationSource() }
+            //TODO Handle logout (cookie
             .build()
     }
 
@@ -52,10 +66,5 @@ class SecurityConfig {
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", cors)
         return source
-    }
-
-    @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
     }
 }
