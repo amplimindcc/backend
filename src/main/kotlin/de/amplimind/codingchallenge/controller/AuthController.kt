@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
+import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import jakarta.servlet.http.HttpSession
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -9,12 +10,12 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-
 @RestController
+@RequestMapping("/v1/auth/")
 class AuthController(private val authenticationProvider: AuthenticationProvider) {
-
 
     @PostMapping("/login")
     fun login(
@@ -25,13 +26,15 @@ class AuthController(private val authenticationProvider: AuthenticationProvider)
             authenticationProvider.authenticate(
                 UsernamePasswordAuthenticationToken(
                     loginRequest.email,
-                    loginRequest.password
-                )
+                    loginRequest.password,
+                ),
             )
+
         SecurityContextHolder.getContext().authentication = authentication
-        session.setAttribute("USER", SecurityContextHolder.getContext().authentication.name)
+        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext())
     }
 
+    // TODO delete this later
     @GetMapping("/whoami")
     fun whoAmI(session: HttpSession): String {
         return "${session.getAttribute("USER")}, User!"

@@ -12,12 +12,11 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
-
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
     private val authenticationProvider: AuthenticationProvider,
-    private val authenticationFilter: AuthenticationFilter
+    private val authenticationFilter: AuthenticationFilter,
 ) {
     companion object {
         val OPEN_API_PATHS =
@@ -47,7 +46,6 @@ class SecurityConfig(
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
 
                 it.requestMatchers("${ADMIN_PATH}**").hasRole(UserRole.ADMIN.name)
-                it.requestMatchers("${ADMIN_PATH}test").hasRole(UserRole.ADMIN.name)
                 it.requestMatchers("/login").permitAll().anyRequest().authenticated()
             }
             .authenticationProvider(authenticationProvider)
@@ -55,8 +53,8 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             }
             .cors { corsConfigurationSource() }
+            //TODO Handle logout (cookie
             .build()
-
     }
 
     @Bean
@@ -68,10 +66,5 @@ class SecurityConfig(
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", cors)
         return source
-    }
-
-    @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
     }
 }
