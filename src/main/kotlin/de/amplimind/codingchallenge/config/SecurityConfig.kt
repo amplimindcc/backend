@@ -39,12 +39,12 @@ class SecurityConfig {
                     // TODO OPEN_API paths should be made restricted (authenticated) later (only for admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
             }
-            .cors{ corsConfigurationSource() }
+            .cors { corsConfigurationSource() }
             .build()
     }
 
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource   {
+    fun corsConfigurationSource(): CorsConfigurationSource {
         val cors = CorsConfiguration()
         cors.allowedOriginPatterns = listOf("http://localhost:*") // todo: change to frontend URL
         cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
