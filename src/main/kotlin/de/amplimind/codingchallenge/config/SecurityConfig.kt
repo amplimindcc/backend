@@ -12,11 +12,12 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
+
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
     private val authenticationProvider: AuthenticationProvider,
-    private val authenticationFilter: AuthenticationFilter,
+    private val authenticationFilter: AuthenticationFilter
 ) {
     companion object {
         val OPEN_API_PATHS =
@@ -41,14 +42,13 @@ class SecurityConfig(
         return http
             .csrf { it.disable() } // TODO Enable CSRF
             .authorizeHttpRequests {
-                it.requestMatchers("/v1/hello/**", "/v1/auth/**").permitAll()
+                it.requestMatchers("/v1/hello/**", "/v1/auth/**", "/whoami").permitAll()
                     // TODO OPEN_API should be secured in the end (only admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
+
                 it.requestMatchers("${ADMIN_PATH}**").hasRole(UserRole.ADMIN.name)
-            }
-            .formLogin {
-                it.permitAll()
-                    .defaultSuccessUrl("${ADMIN_PATH}test", true)
+                it.requestMatchers("${ADMIN_PATH}test").hasRole(UserRole.ADMIN.name)
+                it.requestMatchers("/login").permitAll().anyRequest().authenticated()
             }
             .authenticationProvider(authenticationProvider)
             .sessionManagement {
@@ -56,6 +56,7 @@ class SecurityConfig(
             }
             .cors { corsConfigurationSource() }
             .build()
+
     }
 
     @Bean

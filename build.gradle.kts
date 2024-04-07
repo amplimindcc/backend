@@ -28,6 +28,7 @@ dependencies {
     implementation("org.springframework.session:spring-session-core:3.2.2")
     implementation("org.springframework.session:spring-session-data-redis:3.2.2")
     implementation("org.springframework.boot:spring-boot-starter-data-redis:3.2.4")
+    implementation("org.springframework.data:spring-data-redis:3.2.4")
     implementation("org.springframework.boot:spring-boot-docker-compose:3.2.4")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
