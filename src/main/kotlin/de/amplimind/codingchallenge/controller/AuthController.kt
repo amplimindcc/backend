@@ -1,7 +1,8 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
-import io.swagger.v3.oas.annotations.OpenAPIDefinition
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.servlet.http.HttpSession
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -16,7 +17,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/v1/auth/")
 class AuthController(private val authenticationProvider: AuthenticationProvider) {
-
+    @Operation(summary = "Entry point for user login")
+    @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
     @PostMapping("/login")
     fun login(
         @RequestBody loginRequest: LoginRequestDTO,

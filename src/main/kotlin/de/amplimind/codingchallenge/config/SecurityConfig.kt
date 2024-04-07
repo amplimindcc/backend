@@ -53,7 +53,7 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             }
             .cors { corsConfigurationSource() }
-            //TODO Handle logout (cookie
+            // TODO Handle logout (cookie
             .build()
     }
 
