@@ -63,7 +63,39 @@ class AppConfig(
                     role = UserRole.USER,
                 )
 
-            this.userRepository.saveAll(listOf(admin, user))
+            val initUser =
+                User(
+                    username = "init",
+                    email = "init@web.de",
+                    password = null,
+                    role = UserRole.INIT,
+                )
+
+            val registeredUser =
+                User(
+                    username = "registered",
+                    email = "registered@web.de",
+                    password = passwordEncoder().encode("registered"),
+                    role = UserRole.USER,
+                )
+
+            val implementingUser =
+                User(
+                    username = "implementing",
+                    email = "impl@web.de",
+                    password = passwordEncoder().encode("impl"),
+                    role = UserRole.USER,
+                )
+
+            val submittedUser =
+                User(
+                    username = "submitted",
+                    email = "submitted@web.de",
+                    password = passwordEncoder().encode("submitted"),
+                    role = UserRole.USER,
+                )
+
+            this.userRepository.saveAll(listOf(admin, user, initUser, registeredUser, implementingUser, submittedUser))
         }
     }
 }

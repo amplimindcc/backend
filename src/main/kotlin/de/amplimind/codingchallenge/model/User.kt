@@ -14,19 +14,19 @@ class User(
     private val username: String,
     @Id
     val email: String,
-    private val password: String = "",
+    private val password: String? = null,
     @Enumerated(EnumType.STRING)
     val role: UserRole,
     /**
      * The id of a [Submission] that is mapped to this user.
      */
-    var submissionId: Long,
+    var submissionId: Long? = null,
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return listOf("ROLE_${role.name}").map { GrantedAuthority { it } }.toMutableList()
     }
 
-    override fun getPassword(): String {
+    override fun getPassword(): String? {
         return this.password
     }
 
