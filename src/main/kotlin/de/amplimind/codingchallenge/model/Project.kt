@@ -1,12 +1,17 @@
 package de.amplimind.codingchallenge.model
 
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
-import java.util.UUID
+import jakarta.persistence.Table
 
+@Entity
+@Table(name = "projects")
 class Project(
     @Id
-    val id:UUID,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long,
     val description: String,
-    var active: Boolean
-) {
-}
+    var active: Boolean,
+)
