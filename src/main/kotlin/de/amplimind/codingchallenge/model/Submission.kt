@@ -6,13 +6,13 @@ import java.sql.Timestamp
 import java.util.*
 
 @Entity
-class Abgabe(
+class Submission(
     @Id
     val uuid: UUID,
-    val ablauf: Timestamp,
+    val expirationDate: Timestamp,
     val projectID: UUID,
-    val abgabeDatum: Timestamp,
-    var status : AbgabeStates
+    val turnInDate: Timestamp,
+    var status : SubmissionStates
 
 ) {
 

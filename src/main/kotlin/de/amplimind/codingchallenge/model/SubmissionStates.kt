@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.model
 
-enum class AbgabeStates {
+enum class SubmissionStates {
     UNSUBMITTED,
     SUBMITTED,
     IN_REVIEW,
