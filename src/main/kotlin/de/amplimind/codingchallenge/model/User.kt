@@ -17,6 +17,10 @@ class User(
     private val password: String = "",
     @Enumerated(EnumType.STRING)
     val role: UserRole,
+    /**
+     * The id of a [Submission] that is mapped to this user.
+     */
+    var submissionId: Long,
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return listOf("ROLE_${role.name}").map { GrantedAuthority { it } }.toMutableList()
