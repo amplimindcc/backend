@@ -11,7 +11,7 @@ import jakarta.persistence.Table
 class Project(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long,
+    val id: Long? = null,
     val description: String,
     var active: Boolean,
 )
