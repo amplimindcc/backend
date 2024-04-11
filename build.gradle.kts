@@ -21,6 +21,8 @@ repositories {
 }
 
 dependencies {
+    api("io.jsonwebtoken:jjwt-api:0.12.5")
+
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -37,6 +39,8 @@ dependencies {
 
     runtimeOnly("org.springdoc:springdoc-openapi-kotlin:1.8.0")
     runtimeOnly("com.mysql:mysql-connector-j")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-orgjson:0.12.5")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
