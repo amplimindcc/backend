@@ -47,6 +47,15 @@ class UserService(
     }
 
     /**
+     * Deletes a user by its email
+     * @param email the email of the user to delete
+     */
+    fun deleteUserByEmail(email: String) {
+        val user = this.userRepository.findByEmail(email)
+        user?.let { this.userRepository.delete(it) }
+    }
+
+    /**
      * Changes the role of a user.
      * @param changeUserRoleRequestDTO the request to change the role of a user
      * @return the [UserInfoDTO] of the changed user

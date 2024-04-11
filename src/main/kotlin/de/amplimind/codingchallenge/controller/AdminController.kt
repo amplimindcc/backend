@@ -9,13 +9,7 @@ import de.amplimind.codingchallenge.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 /**
  * Controller for admin related tasks.
@@ -51,6 +45,16 @@ class AdminController(
         return ResponseEntity.ok(userInfo)
     }
 
+    @Operation(summary = "Endpoint for deleting a user by email")
+    @ApiResponse(responseCode = "204", description = "User was deleted successfully.")
+    @DeleteMapping("user/{email}")
+    fun deleteUserByEmail(
+            @PathVariable email: String,
+    ): ResponseEntity<Void> {
+        this.userService.deleteUserByEmail(email)
+        return ResponseEntity.ok().build()
+    }
+
     @Operation(summary = "Endpoint for changing the role of a user")
     @ApiResponse(responseCode = "200", description = "User role was changed successfully.")
     @ApiResponse(responseCode = "400", description = "If the new role which should be set is INIT.")
@@ -62,3 +66,5 @@ class AdminController(
         return ResponseEntity.ok(this.userService.changeUserRole(changeUserRoleRequest))
     }
 }
+
+
