@@ -28,9 +28,9 @@ class UserService(
     fun fetchAllUserInfos(): List<UserInfoDTO> {
         return this.userRepository.findAll().map {
             UserInfoDTO(
-                email = it.email,
-                isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                status = extractUserStatus(it),
+                    email = it.email,
+                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                    status = extractUserStatus(it),
             )
         }
     }
@@ -39,9 +39,9 @@ class UserService(
     fun fetchUserInfosForEmail(email: String): UserInfoDTO {
         return this.userRepository.findByEmail(email)?.let {
             return UserInfoDTO(
-                email = it.email,
-                isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                status = extractUserStatus(it),
+                    email = it.email,
+                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                    status = extractUserStatus(it),
             )
         } ?: throw ResourceNotFoundException("User with email $email was not found")
     }
@@ -50,9 +50,17 @@ class UserService(
      * Deletes a user by its email
      * @param email the email of the user to delete
      */
-    fun deleteUserByEmail(email: String) {
+    fun deleteUserByEmail(email: String): UserInfoDTO {
         val user = this.userRepository.findByEmail(email)
+        val userInfoDTO = user?.let {
+            UserInfoDTO(
+                    email = it.email,
+                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                    status = extractUserStatus(it),
+            )
+        } ?: throw ResourceNotFoundException("User with email $email was not found")
         user?.let { this.userRepository.delete(it) }
+        return userInfoDTO
     }
 
     /**

@@ -24,7 +24,7 @@ class AdminController(
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
     @PostMapping("/project/add")
     fun addProject(
-        @RequestBody createProjectRequest: CreateProjectRequestDTO,
+            @RequestBody createProjectRequest: CreateProjectRequestDTO,
     ) = this.projectService.addProject(createProjectRequest)
 
     @Operation(summary = "Endpoint for fetching all infos for the users")
@@ -39,18 +39,18 @@ class AdminController(
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
     @GetMapping("fetch/projects/{email}")
     fun fetchUserInfosForEmail(
-        @PathVariable email: String,
+            @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
         val userInfo = this.userService.fetchUserInfosForEmail(email)
         return ResponseEntity.ok(userInfo)
     }
 
     @Operation(summary = "Endpoint for deleting a user by email")
-    @ApiResponse(responseCode = "204", description = "User was deleted successfully.")
+    @ApiResponse(responseCode = "200", description = "User was deleted successfully.")
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
             @PathVariable email: String,
-    ): ResponseEntity<Void> {
+    ): ResponseEntity<UserInfoDTO> {
         this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok().build()
     }
