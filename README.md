@@ -20,3 +20,8 @@ Behebung (Windows):
  - Rechtsklick -> Eigenschaften
  - Disablen und Stoppen: ![img_1.png](img_1.png)
  - Backend neustarten
+
+ Docker (Backend):
+ - Im Hauptordner, wo sich Dockerfile befindet, Terminal öffnen
+ - Docker für Desktop muss laufen
+ - docker-compose up --build
