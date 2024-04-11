@@ -20,6 +20,7 @@ class ProjectService(
         val project =
             Project(
                 description = createProjectRequest.description,
+                title = createProjectRequest.title,
                 active = createProjectRequest.active,
             )
 
