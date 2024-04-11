@@ -2,6 +2,7 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
+import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
@@ -46,6 +47,40 @@ class UserService(
     }
 
     /**
+     * Changes the role of a user.
+     * @param changeUserRoleRequestDTO the request to change the role of a user
+     * @return the [UserInfoDTO] of the changed user
+     */
+    fun changeUserRole(changeUserRoleRequestDTO: ChangeUserRoleRequestDTO): UserInfoDTO {
+        if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
+            // Cannot change user role to INIT
+            throw IllegalArgumentException("Cannot change user role to INIT")
+        }
+
+        val foundUser =
+            this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
+                ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
+
+        val updatedUser =
+            foundUser.let {
+                User(
+                    email = it.email,
+                    password = it.password,
+                    role = changeUserRoleRequestDTO.newRole,
+                )
+            }
+
+        // save the updated user
+        this.userRepository.save(updatedUser)
+
+        return UserInfoDTO(
+            email = updatedUser.email,
+            isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
+            status = extractUserStatus(updatedUser),
+        )
+    }
+
+    /**
      * Extracts the [UserStatus] for a provided [User]
      * @param user the user to extract the status from
      * @return the [UserStatus]
@@ -74,11 +109,10 @@ class UserService(
             return UserStatus.IMPLEMENTING
         }
 
-        if (hasUserStartedImplementing(submission).not() || isUserRegistered(user))
-            {
-                // User did not start implementing the submission
-                return UserStatus.REGISTERED
-            }
+        if (hasUserStartedImplementing(submission).not() || isUserRegistered(user)) {
+            // User did not start implementing the submission
+            return UserStatus.REGISTERED
+        }
 
         // This should never happen
         throw IllegalStateException("The userstatus does not match any criteria")

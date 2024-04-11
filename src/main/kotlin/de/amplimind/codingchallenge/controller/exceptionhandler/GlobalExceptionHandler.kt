@@ -20,4 +20,9 @@ class GlobalExceptionHandler {
     fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<String> {
         return ResponseEntity("Resource not found: ${ex.message}", HttpStatus.NOT_FOUND)
     }
+
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgumentException(ex: IllegalArgumentException): ResponseEntity<String> {
+        return ResponseEntity("Illegal argument: ${ex.message}", HttpStatus.BAD_REQUEST)
+    }
 }
