@@ -12,6 +12,7 @@ class Project(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
+    val title: String,
     val description: String,
     var active: Boolean,
 )
