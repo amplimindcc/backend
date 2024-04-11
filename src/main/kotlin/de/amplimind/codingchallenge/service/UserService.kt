@@ -28,7 +28,7 @@ class UserService(
         return this.userRepository.findAll().map {
             UserInfoDTO(
                 email = it.email,
-                role = it.role,
+                isAdmin = it.role.matchesAny(UserRole.ADMIN),
                 status = extractUserStatus(it),
             )
         }
@@ -36,11 +36,11 @@ class UserService(
 
     @Throws(ResourceNotFoundException::class)
     fun fetchUserInfosForEmail(email: String): UserInfoDTO {
-        return this.userRepository.findByEmail(email)?.let { user ->
+        return this.userRepository.findByEmail(email)?.let {
             return UserInfoDTO(
-                email = user.email,
-                role = user.role,
-                status = extractUserStatus(user),
+                email = it.email,
+                isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                status = extractUserStatus(it),
             )
         } ?: throw ResourceNotFoundException("User with email $email was not found")
     }
