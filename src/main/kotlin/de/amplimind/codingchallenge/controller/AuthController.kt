@@ -8,7 +8,6 @@ import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -34,11 +33,5 @@ class AuthController(private val authenticationProvider: AuthenticationProvider)
 
         SecurityContextHolder.getContext().authentication = authentication
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext())
-    }
-
-    // TODO delete this later
-    @GetMapping("/whoami")
-    fun whoAmI(session: HttpSession): String {
-        return "${session.getAttribute("USER")}, User!"
     }
 }

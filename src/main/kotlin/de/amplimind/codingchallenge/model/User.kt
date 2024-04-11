@@ -11,16 +11,11 @@ import org.springframework.security.core.userdetails.UserDetails
 @Entity
 @Table(name = "users")
 class User(
-    private val username: String,
     @Id
     val email: String,
     private val password: String? = null,
     @Enumerated(EnumType.STRING)
     val role: UserRole,
-    /**
-     * The id of a [Submission] that is mapped to this user.
-     */
-    var submissionId: Long? = null,
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return listOf("ROLE_${role.name}").map { GrantedAuthority { it } }.toMutableList()
@@ -31,7 +26,7 @@ class User(
     }
 
     override fun getUsername(): String {
-        return this.username
+        return this.email
     }
 
     override fun isAccountNonExpired(): Boolean {

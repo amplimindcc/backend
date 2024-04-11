@@ -12,7 +12,8 @@ import java.sql.Timestamp
 class Submission(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val uuid: Long,
+    val id: Long? = null,
+    val userEmail: String,
     val expirationDate: Timestamp,
     val projectID: Long,
     val turnInDate: Timestamp,
