@@ -67,5 +67,6 @@ class AdminController(
         @PathVariable email: String,
     ) {
         this.emailService.sendEmail(email)
+        this.userService.createUser(email)
     }
 }

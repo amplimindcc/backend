@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
+import de.amplimind.codingchallenge.exceptions.ResourceAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
@@ -11,8 +12,11 @@ import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import kotlin.jvm.Throws
+import java.util.concurrent.ThreadLocalRandom
+import kotlin.streams.asSequence
+
 
 /**
  * Service for managing users.
@@ -21,7 +25,9 @@ import kotlin.jvm.Throws
 class UserService(
     private val userRepository: UserRepository,
     private val submissionRepository: SubmissionRepository,
+    private val passwordEncoder: PasswordEncoder,
 ) {
+
     /**
      * Fetches all user infos [UserInfoDTO]
      */
@@ -79,6 +85,62 @@ class UserService(
             isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
             status = extractUserStatus(updatedUser),
         )
+    }
+
+
+    /**
+     * Create a new User
+     * @param email The email of the user which should be created
+     */
+    fun createUser(email: String){
+
+        // check if user already exists
+        val foundUser: User? =
+            this.userRepository.findByEmail(email)
+
+        if (foundUser != null){
+            throw ResourceAlreadyExistsException("User with email $email already exists")
+        }
+
+        // create Random initial Password
+        val STRING_LENGTH: Long = 20
+        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+
+        val randomPwd: CharSequence = ThreadLocalRandom.current()
+            .ints(STRING_LENGTH.toLong(), 0, charPool.size)
+            .asSequence()
+            .map(charPool::get)
+            .joinToString("")
+
+        // create new User
+        val newUser = User(
+            email = email,
+            password = passwordEncoder.encode(randomPwd),
+            role = UserRole.USER,
+        )
+        this.userRepository.save(newUser)
+    }
+
+
+    /**
+     * Update password for User
+     * @param email The email of the user which will be updated
+     * @param password The new password that will be set
+     */
+    fun setPassword(email: String, password: String) {
+        val userObject = this.userRepository.findByEmail(email)
+            ?: throw ResourceNotFoundException("User with email ${email} was not found")
+
+        val updatedUser =
+            userObject.let {
+                User(
+                    email = it.email,
+                    role = it.role,
+                    password = passwordEncoder.encode(password as CharSequence)
+                )
+        }
+        this.userRepository.save(updatedUser)
+
     }
 
     /**

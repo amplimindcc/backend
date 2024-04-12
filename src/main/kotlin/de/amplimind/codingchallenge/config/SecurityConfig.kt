@@ -39,13 +39,14 @@ class SecurityConfig(
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         return http
-            .csrf {} // TODO Enable CSRF
+            .csrf {it.disable()} // TODO Enable CSRF
             .authorizeHttpRequests {
                 it.requestMatchers("/v1/hello/**", "/v1/auth/**", "/whoami").permitAll()
                     // TODO OPEN_API should be secured in the end (only admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
 
                 it.requestMatchers("${ADMIN_PATH}**").hasRole(UserRole.ADMIN.name)
+                it.requestMatchers("/logout").permitAll()
                 it.requestMatchers("/login").permitAll().anyRequest().authenticated()
             }
             .authenticationProvider(authenticationProvider)
