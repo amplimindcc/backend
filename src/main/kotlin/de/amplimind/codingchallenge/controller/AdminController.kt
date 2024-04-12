@@ -33,6 +33,11 @@ class AdminController(
         @RequestBody createProjectRequest: CreateProjectRequestDTO,
     ) = this.projectService.addProject(createProjectRequest)
 
+    @Operation(summary = "Endpoint for fetching all projects.")
+    @ApiResponse(responseCode = "200", description = "All projects were fetched successfully.")
+    @GetMapping("/project/fetch/all")
+    fun fetchAllProjects() = ResponseEntity.ok(this.projectService.fetchAllProjects())
+
     @Operation(summary = "Endpoint for fetching all infos for the users")
     @ApiResponse(responseCode = "200", description = "All user infos were fetched successfully.")
     @GetMapping("fetch/users/all")

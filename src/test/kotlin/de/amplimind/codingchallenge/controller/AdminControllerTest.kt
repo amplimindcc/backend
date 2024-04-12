@@ -11,8 +11,10 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * Test class for [AdminController].
@@ -83,6 +85,18 @@ internal class AdminControllerTest
                 content = objectMapper.writeValueAsString(failureRequest)
             }.andExpect {
                 status { isNotFound() }
+            }
+        }
+
+        /**
+         * Test that all projects are fetched correctly.
+         */
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_successful_project_fetch() {
+            // TODO check here for the response data as soon as H2 is used
+            this.mockMvc.get("/v1/admin/project/fetch/all").andExpect {
+                status { isOk() }
             }
         }
     }
