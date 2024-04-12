@@ -35,6 +35,7 @@ class UserService(
         }
     }
 
+    // TODO maybe remove later, might not be needed
     @Throws(ResourceNotFoundException::class)
     fun fetchUserInfosForEmail(email: String): UserInfoDTO {
         return this.userRepository.findByEmail(email)?.let {
