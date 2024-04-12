@@ -101,4 +101,30 @@ internal class AdminControllerTest
                 status { isOk() }
             }
         }
+
+        /**
+         * Test that all users are fetched correctly.
+         */
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_change_submission_status_reviewed() {
+            // TODO check here for the response data as soon as H2 is used
+            this.mockMvc.put("/v1/admin/change/submissionstate/reviewed/submitted@web.de")
+                .andExpect {
+                    status { isOk() }
+                }
+        }
+
+        /**
+         * Test that an exception is thrown if the submission is not found.
+         */
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_change_submission_status_reviewed_failure() {
+            // TODO check here for the response data as soon as H2 is used
+            this.mockMvc.put("/v1/admin/change/submissionstate/reviewed/unknown@web.de")
+                .andExpect {
+                    status { isNotFound() }
+                }
+        }
     }

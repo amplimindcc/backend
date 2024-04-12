@@ -5,6 +5,7 @@ import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.service.ProjectService
+import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 class AdminController(
     private val projectService: ProjectService,
     private val userService: UserService,
+    private val submissionService: SubmissionService,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
@@ -66,4 +68,13 @@ class AdminController(
     ): ResponseEntity<UserInfoDTO> {
         return ResponseEntity.ok(this.userService.changeUserRole(changeUserRoleRequest))
     }
+
+    @Operation(summary = "Endpoint for changing the state of a submission to reviewed")
+    @ApiResponse(responseCode = "200", description = "Submission state was changed successfully.")
+    @ApiResponse(responseCode = "400", description = "If the submission is not in state from which it can be set to reviewed")
+    @ApiResponse(responseCode = "404", description = "If the submission for the provided email was not found.")
+    @PutMapping("change/submissionstate/reviewed/{email}")
+    fun changeSubmissionStateReviewed(
+        @PathVariable email: String,
+    ) = ResponseEntity.ok(this.submissionService.changeSubmissionStateReviewed(email))
 }
