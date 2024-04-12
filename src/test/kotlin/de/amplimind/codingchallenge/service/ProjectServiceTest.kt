@@ -12,10 +12,12 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
+import org.springframework.test.context.ActiveProfiles
 
 /**
  * Test class for [ProjectService].
  */
+@ActiveProfiles("test")
 internal class ProjectServiceTest {
 
     @MockK
