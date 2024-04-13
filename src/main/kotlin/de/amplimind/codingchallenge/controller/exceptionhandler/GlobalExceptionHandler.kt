@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.controller.exceptionhandler
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -27,6 +28,11 @@ class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException::class, IllegalStateException::class)
     fun handleIllegalArgumentException(ex: IllegalArgumentException): ResponseEntity<String> {
         return ResponseEntity("Illegal argument: ${ex.message}", HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(UserSelfDeleteException::class)
+    fun handleException(ex: Exception): ResponseEntity<String> {
+        return ResponseEntity("UserSelfDeleteException occurred: ${ex.message}", HttpStatus.CONFLICT)
     }
 
     @ExceptionHandler(UserAlreadyExistsException::class)

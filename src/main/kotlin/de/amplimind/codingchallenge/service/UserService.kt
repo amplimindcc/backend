@@ -6,12 +6,14 @@ import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.jwt.JWTUtils
 import de.amplimind.codingchallenge.model.*
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import org.springframework.security.core.context.SecurityContextHolder
 import de.amplimind.codingchallenge.utils.UserUtils
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -37,9 +39,9 @@ class UserService(
     fun fetchAllUserInfos(): List<UserInfoDTO> {
         return this.userRepository.findAll().map {
             UserInfoDTO(
-                email = it.email,
-                isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                status = extractUserStatus(it),
+                    email = it.email,
+                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                    status = extractUserStatus(it),
             )
         }
     }
@@ -49,11 +51,39 @@ class UserService(
     fun fetchUserInfosForEmail(email: String): UserInfoDTO {
         return this.userRepository.findByEmail(email)?.let {
             return UserInfoDTO(
-                email = it.email,
-                isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                status = extractUserStatus(it),
+                    email = it.email,
+                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                    status = extractUserStatus(it),
             )
         } ?: throw ResourceNotFoundException("User with email $email was not found")
+    }
+
+    /**
+     * Deletes a user by its email
+     * @param email the email of the user to delete
+     * @return the [UserInfoDTO] of the deleted user
+     */
+    fun deleteUserByEmail(email: String): UserInfoDTO {
+        // Check if the user is trying to delete himself
+        val auth = SecurityContextHolder.getContext().authentication
+        val authenticatedUserEmail = auth?.name
+        if (authenticatedUserEmail == email) {
+            throw UserSelfDeleteException("User with email $email cannot delete himself")
+        }
+
+        // Delete the submissions of the user
+        val submissions = this.submissionRepository.findByUserEmail(email)
+        if (submissions != null) {
+            this.submissionRepository.delete(submissions)
+        }
+
+        // Find the user & delete the user
+        val user = this.userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
+        this.userRepository.delete(user)
+        return UserInfoDTO(
+            email = user.email,
+            isAdmin = user.role.matchesAny(UserRole.ADMIN),
+            status = UserStatus.DELETED)
     }
 
     /**
