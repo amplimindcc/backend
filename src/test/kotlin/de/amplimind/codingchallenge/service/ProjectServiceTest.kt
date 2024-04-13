@@ -12,12 +12,13 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
+import org.springframework.test.context.ActiveProfiles
 
 /**
  * Test class for [ProjectService].
  */
+@ActiveProfiles("test")
 internal class ProjectServiceTest {
-
     @MockK
     lateinit var projectRepository: ProjectRepository
 
@@ -62,5 +63,31 @@ internal class ProjectServiceTest {
                     it.active == project.active
             },
         )
+    }
+
+    /**
+     * Test that all projects are fetched correctly.
+     */
+    @Test
+    fun fetch_all_projects_test() {
+        val exampleProjects: List<Project> =
+            listOf(
+                Project(
+                    title = "Test Project 1",
+                    description = "This is a test description",
+                    active = true,
+                ),
+                Project(
+                    title = "Test Project 2",
+                    description = "This is a test description",
+                    active = false,
+                ),
+            )
+
+        every { projectRepository.findAll() } returns exampleProjects
+
+        val fetchedProjects = projectService.fetchAllProjects()
+
+        assert(fetchedProjects == exampleProjects)
     }
 }

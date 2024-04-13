@@ -26,4 +26,10 @@ class ProjectService(
 
         this.projectRepository.save(project)
     }
+
+    /**
+     * Fetches all projects.
+     * @return a list of all [Project]s
+     */
+    fun fetchAllProjects(): List<Project> = this.projectRepository.findAll()
 }

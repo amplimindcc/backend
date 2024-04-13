@@ -16,10 +16,12 @@ import io.mockk.slot
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.test.context.ActiveProfiles
 
 /**
  * Test class for [UserService].
  */
+@ActiveProfiles("test")
 internal class UserServiceTest {
     @MockK
     private lateinit var userRepository: UserRepository

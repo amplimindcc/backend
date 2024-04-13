@@ -50,6 +50,8 @@ dependencies {
     testImplementation("io.mockk:mockk:1.12.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api")
     testImplementation("org.junit.jupiter:junit-jupiter-engine")
+
+    testRuntimeOnly("com.h2database:h2")
 }
 
 tasks.withType<KotlinCompile> {

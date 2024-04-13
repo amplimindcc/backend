@@ -14,6 +14,7 @@ import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import de.amplimind.codingchallenge.utils.UserUtils
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.concurrent.ThreadLocalRandom
@@ -65,6 +66,12 @@ class UserService(
         if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
             // Cannot change user role to INIT
             throw IllegalArgumentException("Cannot change user role to INIT")
+        }
+
+        val user = UserUtils.fetchLoggedInUser()
+
+        if (user.email == changeUserRoleRequestDTO.email) {
+            throw IllegalArgumentException("Cannot change own role")
         }
 
         val foundUser =
@@ -218,7 +225,7 @@ class UserService(
      * @return true if the user has completed the submission
      */
     private fun hasUserCompletedSubmission(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.IN_REVIEW, SubmissionStates.SUBMITTED)
+        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.SUBMITTED)
     }
 
     /**
