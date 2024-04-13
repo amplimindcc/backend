@@ -15,9 +15,6 @@ enum class SubmissionStates {
     // Will be set by the user when he submits his project
     SUBMITTED,
 
-    // TODO maybe not needed
-    IN_REVIEW,
-
     // Will be set by the admin when he reviewed the project
     REVIEWED,
 }
