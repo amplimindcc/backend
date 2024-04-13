@@ -1,6 +1,9 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
+import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import io.mockk.MockKAnnotations
@@ -11,8 +14,10 @@ import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.any
 import org.springframework.test.context.ActiveProfiles
+import java.util.*
 
 /**
  * Test class for [ProjectService].
@@ -89,5 +94,101 @@ internal class ProjectServiceTest {
         val fetchedProjects = projectService.fetchAllProjects()
 
         assert(fetchedProjects == exampleProjects)
+    }
+
+    /**
+     * Test that a project's title is changed correctly.
+     */
+    @Test
+    fun test_change_project_active() {
+        val projectId = 1L
+        val active = false
+
+        val project =
+            Project(
+                id = projectId,
+                title = "Test Project",
+                description = "This is a test description",
+                active = true,
+            )
+
+        val changeProjectActiveStatusRequestDTO =
+            ChangeProjectActiveStatusRequestDTO(
+                projectId = projectId,
+                active = active,
+            )
+
+        every { projectRepository.findById(projectId) } returns Optional.of(project)
+        every { projectRepository.save(project) } returns project
+
+        val updatedProject = projectService.changeProjectActive(changeProjectActiveStatusRequestDTO)
+
+        assert(updatedProject.active == active)
+    }
+
+    /**
+     * Test that an exception is thrown when trying to change the active state of a project that does not exist.
+     */
+    @Test
+    fun change_project_active_state_failure() {
+        val changeProjectActiveStatusRequestDTO =
+            ChangeProjectActiveStatusRequestDTO(
+                projectId = -1,
+                active = true,
+            )
+
+        every { projectRepository.findById(changeProjectActiveStatusRequestDTO.projectId) } returns Optional.empty()
+
+        assertThrows<ResourceNotFoundException> {
+            projectService.changeProjectActive(changeProjectActiveStatusRequestDTO)
+        }
+    }
+
+    /**
+     * Test that a project's title is changed correctly.
+     */
+    @Test
+    fun test_change_project_title() {
+        val projectId = 1L
+        val newTitle = "New Title"
+
+        val project =
+            Project(
+                id = projectId,
+                title = "Test Project",
+                description = "This is a test description",
+                active = true,
+            )
+
+        val changeProjectTitleRequestDTO =
+            ChangeProjectTitleRequestDTO(
+                projectId = projectId,
+                newTitle = newTitle,
+            )
+
+        every { projectRepository.findById(projectId) } returns Optional.of(project)
+        every { projectRepository.save(project) } returns project
+
+        val updatedProject = projectService.changeProjectTitle(changeProjectTitleRequestDTO)
+
+        assert(updatedProject.title == newTitle)
+    }
+
+    /**
+     * Test that an exception is thrown when trying to change the title of a project that does not exist.
+     */
+    @Test
+    fun change_project_title_failure() {
+        val changeProjectTitleRequestDTO =
+            ChangeProjectTitleRequestDTO(
+                projectId = -1,
+                newTitle = "New Title",
+            )
+
+        every { projectRepository.findById(changeProjectTitleRequestDTO.projectId) } returns Optional.empty()
+
+        assertThrows<ResourceNotFoundException> {
+            projectService.changeProjectTitle(changeProjectTitleRequestDTO)
+        }
     }
 }

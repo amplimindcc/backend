@@ -6,21 +6,20 @@ import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.jwt.JWTUtils
 import de.amplimind.codingchallenge.model.*
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
-import org.springframework.security.core.context.SecurityContextHolder
 import de.amplimind.codingchallenge.utils.UserUtils
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.sql.Timestamp
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.streams.asSequence
-
 
 /**
  * Service for managing users.
@@ -32,16 +31,15 @@ class UserService(
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
 ) {
-
     /**
      * Fetches all user infos [UserInfoDTO]
      */
     fun fetchAllUserInfos(): List<UserInfoDTO> {
         return this.userRepository.findAll().map {
             UserInfoDTO(
-                    email = it.email,
-                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                    status = extractUserStatus(it),
+                email = it.email,
+                isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                status = extractUserStatus(it),
             )
         }
     }
@@ -51,9 +49,9 @@ class UserService(
     fun fetchUserInfosForEmail(email: String): UserInfoDTO {
         return this.userRepository.findByEmail(email)?.let {
             return UserInfoDTO(
-                    email = it.email,
-                    isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                    status = extractUserStatus(it),
+                email = it.email,
+                isAdmin = it.role.matchesAny(UserRole.ADMIN),
+                status = extractUserStatus(it),
             )
         } ?: throw ResourceNotFoundException("User with email $email was not found")
     }
@@ -83,7 +81,8 @@ class UserService(
         return UserInfoDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
-            status = UserStatus.DELETED)
+            status = UserStatus.DELETED,
+        )
     }
 
     /**
@@ -131,10 +130,11 @@ class UserService(
      * @param registerRequest
      */
 
-    fun handleRegister(registerRequest: RegisterRequestDTO){
+    fun handleRegister(registerRequest: RegisterRequestDTO)  {
         val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
-        val user = userRepository.findByEmail(email)
-            ?: throw ResourceNotFoundException("User with email $email was not found")
+        val user =
+            userRepository.findByEmail(email)
+                ?: throw ResourceNotFoundException("User with email $email was not found")
 
         if (user.role.matchesAny(UserRole.ADMIN, UserRole.USER)) {
             throw InvalidTokenException("Token was already used")
@@ -158,13 +158,11 @@ class UserService(
         )
     }
 
-
     /**
      * Create a new User
      * @param email The email of the user which should be created
      */
-    fun createUser(email: String): User{
-
+    fun createUser(email: String): User  {
         val foundUser: User? =
             this.userRepository.findByEmail(email)
 
@@ -172,11 +170,12 @@ class UserService(
             throw UserAlreadyExistsException("User with email $email already exists")
         }
 
-        val newUser = User(
-            email = email,
-            password = passwordEncoder.encode(createPassword(20)),
-            role = UserRole.INIT,
-        )
+        val newUser =
+            User(
+                email = email,
+                password = passwordEncoder.encode(createPassword(20)),
+                role = UserRole.INIT,
+            )
         this.userRepository.save(newUser)
 
         generateSubmission(newUser)
@@ -184,9 +183,9 @@ class UserService(
         return newUser
     }
 
-    fun createPassword(length: Long): String{
+    fun createPassword(length: Long): String  {
         // create Random initial Password
-        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
         return ThreadLocalRandom.current()
             .ints(length, 0, charPool.size)
@@ -195,39 +194,41 @@ class UserService(
             .joinToString("")
     }
 
-    fun generateSubmission(user: User){
+    fun generateSubmission(user: User)  {
         // create new User
-        val newSubmission = Submission(
-            userEmail = user.email,
-            expirationDate = Timestamp(0),
-            projectID  = (0..<submissionRepository.count()).random(),
-            turnInDate = Timestamp(0),
-            status = SubmissionStates.INIT
-        )
+        val newSubmission =
+            Submission(
+                userEmail = user.email,
+                expirationDate = Timestamp(0),
+                projectID = (0..<submissionRepository.count()).random(),
+                turnInDate = Timestamp(0),
+                status = SubmissionStates.INIT,
+            )
         this.submissionRepository.save(newSubmission)
     }
-
-
 
     /**
      * Update password for User
      * @param email The email of the user which will be updated
      * @param password The new password that will be set
      */
-    fun setPassword(email: String, password: String) {
-        val userObject = this.userRepository.findByEmail(email)
-            ?: throw ResourceNotFoundException("User with email ${email} was not found")
+    fun setPassword(
+        email: String,
+        password: String,
+    ) {
+        val userObject =
+            this.userRepository.findByEmail(email)
+                ?: throw ResourceNotFoundException("User with email $email was not found")
 
         val updatedUser =
             userObject.let {
                 User(
                     email = it.email,
                     role = UserRole.USER,
-                    password = passwordEncoder.encode(password)
+                    password = passwordEncoder.encode(password),
                 )
-        }
+            }
         this.userRepository.save(updatedUser)
-
     }
 
     /**

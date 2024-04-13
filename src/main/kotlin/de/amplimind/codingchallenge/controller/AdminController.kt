@@ -2,6 +2,8 @@ package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
 import de.amplimind.codingchallenge.dto.UserInfoDTO
+import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
+import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.service.ProjectService
@@ -26,7 +28,7 @@ class AdminController(
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
     @PostMapping("/project/add")
     fun addProject(
-            @RequestBody createProjectRequest: CreateProjectRequestDTO,
+        @RequestBody createProjectRequest: CreateProjectRequestDTO,
     ) = this.projectService.addProject(createProjectRequest)
 
     @Operation(summary = "Endpoint for fetching all projects.")
@@ -46,7 +48,7 @@ class AdminController(
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
     @GetMapping("fetch/projects/{email}")
     fun fetchUserInfosForEmail(
-            @PathVariable email: String,
+        @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
         val userInfo = this.userService.fetchUserInfosForEmail(email)
         return ResponseEntity.ok(userInfo)
@@ -57,7 +59,7 @@ class AdminController(
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
-            @PathVariable email: String,
+        @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
         val userInfo = this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok(userInfo)
@@ -74,7 +76,6 @@ class AdminController(
     ): ResponseEntity<UserInfoDTO> {
         return ResponseEntity.ok(this.userService.changeUserRole(changeUserRoleRequest))
     }
-
 
     @Operation(summary = "Endpoint for creating applicant and emailing him the invite")
     @ApiResponse(responseCode = "200", description = "User info was fetched successfully.")
@@ -94,6 +95,20 @@ class AdminController(
     fun changeSubmissionStateReviewed(
         @PathVariable email: String,
     ) = ResponseEntity.ok(this.submissionService.changeSubmissionStateReviewed(email))
+
+    @Operation(summary = "Endpoint for changing the state of a submission to submitted")
+    @ApiResponse(responseCode = "200", description = "Submission state was changed successfully.")
+    @ApiResponse(responseCode = "404", description = "If the project for the provided id not found.")
+    @PutMapping("/change/project/active")
+    fun changeProjectActive(
+        @RequestBody changeProjectActiveStatusRequestDTO: ChangeProjectActiveStatusRequestDTO,
+    ) = ResponseEntity.ok(this.projectService.changeProjectActive(changeProjectActiveStatusRequestDTO))
+
+    @Operation(summary = "Endpoint for changing the title of a project")
+    @ApiResponse(responseCode = "200", description = "Project title was changed successfully.")
+    @ApiResponse(responseCode = "404", description = "If the project for the provided id not found.")
+    @PutMapping("/change/project/title")
+    fun changeProjectTitle(
+        @RequestBody changeProjectTitleRequestDTO: ChangeProjectTitleRequestDTO,
+    ) = ResponseEntity.ok(this.projectService.changeProjectTitle(changeProjectTitleRequestDTO))
 }
-
-

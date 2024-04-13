@@ -5,11 +5,8 @@ import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
 
-
-
 @Service
 class EmailService(private val sender: JavaMailSender) {
-
     /**
      * email to the applicant the URL to set the password
      * @param email The email address, where the email will be sent

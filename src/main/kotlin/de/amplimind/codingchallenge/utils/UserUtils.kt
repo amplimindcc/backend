@@ -1,7 +1,6 @@
 package de.amplimind.codingchallenge.utils
 
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
-import de.amplimind.codingchallenge.model.User
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import kotlin.jvm.Throws

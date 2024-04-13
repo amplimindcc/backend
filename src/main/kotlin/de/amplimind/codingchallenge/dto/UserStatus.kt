@@ -27,5 +27,5 @@ enum class UserStatus {
     /**
      * User has been deleted
      */
-    DELETED
+    DELETED,
 }

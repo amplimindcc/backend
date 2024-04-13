@@ -22,8 +22,7 @@ class AuthController(
     private val authenticationProvider: AuthenticationProvider,
     private val userService: UserService,
     private val passwordEncoder: PasswordEncoder,
-    ) {
-
+) {
     @Operation(summary = "Entry point for user login")
     @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
     @PostMapping("/login")

@@ -13,7 +13,7 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Utils object for creating and validating a JWT as well as reading out certain claim keys
  */
-object JWTUtils{
+object JWTUtils {
 
     const val MAIL_KEY = "email"
     const val EXPIRATION_FROM_CREATION: Long = 5
