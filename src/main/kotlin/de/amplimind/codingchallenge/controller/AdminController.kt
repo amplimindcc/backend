@@ -47,12 +47,13 @@ class AdminController(
 
     @Operation(summary = "Endpoint for deleting a user by email")
     @ApiResponse(responseCode = "200", description = "User was deleted successfully.")
+    @ApiResponse(responseCode = "404", description = "User with email was not found.")
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
             @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
-        this.userService.deleteUserByEmail(email)
-        return ResponseEntity.ok().build()
+        val userInfo = this.userService.deleteUserByEmail(email)
+        return ResponseEntity.ok(userInfo)
     }
 
     @Operation(summary = "Endpoint for changing the role of a user")
