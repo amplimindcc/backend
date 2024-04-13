@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.utils
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
 import de.amplimind.codingchallenge.model.User
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import kotlin.jvm.Throws
 
 /**
@@ -11,14 +12,14 @@ import kotlin.jvm.Throws
 object UserUtils {
     /**
      * Fetches the currently logged in user.
-     * @return the currently logged in [User]
+     * @return the currently logged in [UserDetails]
      * @throws NoAuthenticationException if no authentication is present
      */
     @Throws(NoAuthenticationException::class)
-    fun fetchLoggedInUser(): User {
+    fun fetchLoggedInUser(): UserDetails {
         SecurityContextHolder.getContext().authentication?.let {
-            if (it.principal is User) {
-                return it.principal as User
+            if (it.principal is UserDetails) {
+                return it.principal as UserDetails
             }
         }
 

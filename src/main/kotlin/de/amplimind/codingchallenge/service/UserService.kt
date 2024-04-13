@@ -61,7 +61,7 @@ class UserService(
 
         val user = UserUtils.fetchLoggedInUser()
 
-        if (user.email == changeUserRoleRequestDTO.email) {
+        if (user.username == changeUserRoleRequestDTO.email) {
             throw IllegalArgumentException("Cannot change own role")
         }
 
