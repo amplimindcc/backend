@@ -16,6 +16,9 @@ import io.mockk.slot
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 
 /**
@@ -35,6 +38,15 @@ internal class UserServiceTest {
     @BeforeEach
     fun setUp() = MockKAnnotations.init(this)
 
+    companion object {
+        val adminUser =
+            User(
+                email = "adminUser@web.de",
+                password = "password",
+                role = UserRole.ADMIN,
+            )
+    }
+
     /**
      * Test that a [IllegalArgumentException] is thrown when trying to change a user role to [UserRole.INIT].
      */
@@ -53,12 +65,14 @@ internal class UserServiceTest {
      * Test that a [ResourceNotFoundException] is thrown when trying to change the role of a user that does not exist.
      */
     @Test
+    @WithMockUser(username = "admin", roles = ["ADMIN"])
     fun test_change_user_role_not_found_user() {
         val changeUserRoleRequest =
             ChangeUserRoleRequestDTO(
                 email = "doesnotexists@web.de",
                 newRole = UserRole.ADMIN,
             )
+        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(adminUser, null)
 
         every { userRepository.findByEmail(changeUserRoleRequest.email) } returns null
 
@@ -89,6 +103,8 @@ internal class UserServiceTest {
                 password = "password",
                 role = changeUserRoleRequest.newRole,
             )
+
+        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(adminUser, null)
 
         val userSlot = slot<User>()
 
