@@ -59,14 +59,13 @@ class AdminController(
     }
 
 
-    @Operation(summary = "Endpoint for fetching the info for a user by email")
+    @Operation(summary = "Endpoint for creating applicant and emailing him the invite")
     @ApiResponse(responseCode = "200", description = "User info was fetched successfully.")
-    @ApiResponse(responseCode = "404", description = "User with email was not found.")
+    @ApiResponse(responseCode = "409", description = "User already exists")
     @GetMapping("invite/{email}")
     fun createInvite(
         @PathVariable email: String,
-    ) {
-        this.emailService.sendEmail(email)
-        this.userService.createUser(email)
+    ): ResponseEntity<UserInfoDTO> {
+        return this.userService.handleInvite(email)
     }
 }

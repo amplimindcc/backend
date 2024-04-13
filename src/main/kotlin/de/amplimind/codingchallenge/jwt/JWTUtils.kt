@@ -5,7 +5,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Date
+import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
@@ -14,7 +14,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 object JWTUtils {
     const val MAIL_KEY = "email"
-    private const val EXPIRATION_FROM_CREATION: Long = 5
+    const val EXPIRATION_FROM_CREATION: Long = 5
 
     private val enc: AeadAlgorithm = Jwts.ENC.A256GCM
     private val key: SecretKey =

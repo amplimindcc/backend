@@ -1,8 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
-import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
-import de.amplimind.codingchallenge.jwt.JWTUtils
+import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -45,12 +44,12 @@ class AuthController(
     }
 
     @Operation(summary = "Entry point for invite")
-    @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
-    @PostMapping("/invite")
+    @ApiResponse(responseCode = "200", description = "User registered successfully")
+    @ApiResponse(responseCode = "400", description = "Token is invalid")
+    @PostMapping("/register")
     fun invite(
-        @RequestBody inviteRequest: InviteRequestDTO,
+        @RequestBody registerRequest: RegisterRequestDTO,
     ) {
-        val email: String = JWTUtils.getClaimItem(inviteRequest.token, "email") as String
-        this.userService.setPassword(email, inviteRequest.password)
+        this.userService.handleRegister(registerRequest)
     }
 }

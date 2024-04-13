@@ -3,9 +3,11 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
-import de.amplimind.codingchallenge.exceptions.ResourceAlreadyExistsException
+import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
+import de.amplimind.codingchallenge.jwt.JWTUtils
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.User
@@ -26,6 +28,7 @@ class UserService(
     private val userRepository: UserRepository,
     private val submissionRepository: SubmissionRepository,
     private val passwordEncoder: PasswordEncoder,
+    private val emailService: EmailService,
 ) {
 
     /**
@@ -87,19 +90,44 @@ class UserService(
         )
     }
 
+    /**
+     * overrride random password with password set by user
+     * @param registerRequest
+     */
+
+    fun handleRegister(registerRequest: RegisterRequestDTO){
+        val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
+        setPassword(email, registerRequest.password)
+    }
+
+    /**
+     * handle the Invite of a new applicant
+     * @param email The email of the applicant which should be created and where the email should be sent to
+     */
+
+    fun handleInvite(email: String): UserInfoDTO {
+        val user = createUser(email)
+        emailService.sendEmail(email)
+        return UserInfoDTO(
+            email = user.email,
+            isAdmin = user.role.matchesAny(UserRole.ADMIN),
+            status = extractUserStatus(user),
+        )
+    }
+
 
     /**
      * Create a new User
      * @param email The email of the user which should be created
      */
-    fun createUser(email: String){
+    fun createUser(email: String): User{
 
         // check if user already exists
         val foundUser: User? =
             this.userRepository.findByEmail(email)
 
         if (foundUser != null){
-            throw ResourceAlreadyExistsException("User with email $email already exists")
+            throw UserAlreadyExistsException("User with email $email already exists")
         }
 
         // create Random initial Password
@@ -116,10 +144,13 @@ class UserService(
         val newUser = User(
             email = email,
             password = passwordEncoder.encode(randomPwd),
-            role = UserRole.USER,
+            role = UserRole.INIT,
         )
         this.userRepository.save(newUser)
+
+        return newUser
     }
+
 
 
     /**
@@ -135,8 +166,8 @@ class UserService(
             userObject.let {
                 User(
                     email = it.email,
-                    role = it.role,
-                    password = passwordEncoder.encode(password as CharSequence)
+                    role = UserRole.USER,
+                    password = passwordEncoder.encode(password)
                 )
         }
         this.userRepository.save(updatedUser)
