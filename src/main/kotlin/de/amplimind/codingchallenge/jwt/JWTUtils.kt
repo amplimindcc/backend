@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.jwt
 
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
@@ -12,7 +13,8 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Utils object for creating and validating a JWT as well as reading out certain claim keys
  */
-object JWTUtils {
+object JWTUtils{
+
     const val MAIL_KEY = "email"
     const val EXPIRATION_FROM_CREATION: Long = 5
 
@@ -50,11 +52,12 @@ object JWTUtils {
         try {
             parsedClaims = Jwts.parser().decryptWith(key).build().parseEncryptedClaims(token).payload
         } catch (e: Exception) {
-            throw SecurityException("Invalid JWT token")
+            throw InvalidTokenException("Invalid JWT token")
         }
         if (Date.from(Instant.now()).after(parsedClaims.expiration)) {
-            throw SecurityException("Token is expired")
+            throw InvalidTokenException("Token is expired")
         }
+
         return parsedClaims
     }
 

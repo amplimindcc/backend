@@ -4,19 +4,18 @@ import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.jwt.JWTUtils
-import de.amplimind.codingchallenge.model.Submission
-import de.amplimind.codingchallenge.model.SubmissionStates
-import de.amplimind.codingchallenge.model.User
-import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.model.*
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.utils.UserUtils
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import java.sql.Timestamp
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.streams.asSequence
 
@@ -104,6 +103,13 @@ class UserService(
 
     fun handleRegister(registerRequest: RegisterRequestDTO){
         val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
+        val user = userRepository.findByEmail(email)
+            ?: throw ResourceNotFoundException("User with email $email was not found")
+
+        if (user.role.matchesAny(UserRole.ADMIN, UserRole.USER)) {
+            throw InvalidTokenException("Token was already used")
+        }
+
         setPassword(email, registerRequest.password)
     }
 
@@ -129,33 +135,46 @@ class UserService(
      */
     fun createUser(email: String): User{
 
-        // check if user already exists
         val foundUser: User? =
             this.userRepository.findByEmail(email)
 
-        if (foundUser != null){
+        if (foundUser != null) {
             throw UserAlreadyExistsException("User with email $email already exists")
         }
 
-        // create Random initial Password
-        val STRING_LENGTH: Long = 20
-        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-
-        val randomPwd: CharSequence = ThreadLocalRandom.current()
-            .ints(STRING_LENGTH, 0, charPool.size)
-            .asSequence()
-            .map(charPool::get)
-            .joinToString("")
-
-        // create new User
         val newUser = User(
             email = email,
-            password = passwordEncoder.encode(randomPwd),
+            password = passwordEncoder.encode(createPassword(20)),
             role = UserRole.INIT,
         )
         this.userRepository.save(newUser)
 
+        generateSubmission(newUser)
+
         return newUser
+    }
+
+    fun createPassword(length: Long): String{
+        // create Random initial Password
+        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+
+        return ThreadLocalRandom.current()
+            .ints(length, 0, charPool.size)
+            .asSequence()
+            .map(charPool::get)
+            .joinToString("")
+    }
+
+    fun generateSubmission(user: User){
+        // create new User
+        val newSubmission = Submission(
+            userEmail = user.email,
+            expirationDate = Timestamp(0),
+            projectID  = (0..<submissionRepository.count()).random(),
+            turnInDate = Timestamp(0),
+            status = SubmissionStates.INIT
+        )
+        this.submissionRepository.save(newSubmission)
     }
 
 
