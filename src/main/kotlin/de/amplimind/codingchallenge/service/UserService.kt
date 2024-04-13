@@ -3,18 +3,24 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
+import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
-import de.amplimind.codingchallenge.model.Submission
-import de.amplimind.codingchallenge.model.SubmissionStates
-import de.amplimind.codingchallenge.model.User
-import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.jwt.JWTUtils
+import de.amplimind.codingchallenge.model.*
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import org.springframework.security.core.context.SecurityContextHolder
+import de.amplimind.codingchallenge.utils.UserUtils
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import kotlin.jvm.Throws
+import java.sql.Timestamp
+import java.util.concurrent.ThreadLocalRandom
+import kotlin.streams.asSequence
+
 
 /**
  * Service for managing users.
@@ -23,7 +29,10 @@ import kotlin.jvm.Throws
 class UserService(
     private val userRepository: UserRepository,
     private val submissionRepository: SubmissionRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val emailService: EmailService,
 ) {
+
     /**
      * Fetches all user infos [UserInfoDTO]
      */
@@ -37,6 +46,7 @@ class UserService(
         }
     }
 
+    // TODO maybe remove later, might not be needed
     @Throws(ResourceNotFoundException::class)
     fun fetchUserInfosForEmail(email: String): UserInfoDTO {
         return this.userRepository.findByEmail(email)?.let {
@@ -87,6 +97,12 @@ class UserService(
             throw IllegalArgumentException("Cannot change user role to INIT")
         }
 
+        val user = UserUtils.fetchLoggedInUser()
+
+        if (user.username == changeUserRoleRequestDTO.email) {
+            throw IllegalArgumentException("Cannot change own role")
+        }
+
         val foundUser =
             this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
                 ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
@@ -108,6 +124,110 @@ class UserService(
             isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
             status = extractUserStatus(updatedUser),
         )
+    }
+
+    /**
+     * overrride random password with password set by user
+     * @param registerRequest
+     */
+
+    fun handleRegister(registerRequest: RegisterRequestDTO){
+        val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
+        val user = userRepository.findByEmail(email)
+            ?: throw ResourceNotFoundException("User with email $email was not found")
+
+        if (user.role.matchesAny(UserRole.ADMIN, UserRole.USER)) {
+            throw InvalidTokenException("Token was already used")
+        }
+
+        setPassword(email, registerRequest.password)
+    }
+
+    /**
+     * handle the Invite of a new applicant
+     * @param email The email of the applicant which should be created and where the email should be sent to
+     */
+
+    fun handleInvite(email: String): UserInfoDTO {
+        val user = createUser(email)
+        emailService.sendEmail(email)
+        return UserInfoDTO(
+            email = user.email,
+            isAdmin = user.role.matchesAny(UserRole.ADMIN),
+            status = extractUserStatus(user),
+        )
+    }
+
+
+    /**
+     * Create a new User
+     * @param email The email of the user which should be created
+     */
+    fun createUser(email: String): User{
+
+        val foundUser: User? =
+            this.userRepository.findByEmail(email)
+
+        if (foundUser != null) {
+            throw UserAlreadyExistsException("User with email $email already exists")
+        }
+
+        val newUser = User(
+            email = email,
+            password = passwordEncoder.encode(createPassword(20)),
+            role = UserRole.INIT,
+        )
+        this.userRepository.save(newUser)
+
+        generateSubmission(newUser)
+
+        return newUser
+    }
+
+    fun createPassword(length: Long): String{
+        // create Random initial Password
+        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+
+        return ThreadLocalRandom.current()
+            .ints(length, 0, charPool.size)
+            .asSequence()
+            .map(charPool::get)
+            .joinToString("")
+    }
+
+    fun generateSubmission(user: User){
+        // create new User
+        val newSubmission = Submission(
+            userEmail = user.email,
+            expirationDate = Timestamp(0),
+            projectID  = (0..<submissionRepository.count()).random(),
+            turnInDate = Timestamp(0),
+            status = SubmissionStates.INIT
+        )
+        this.submissionRepository.save(newSubmission)
+    }
+
+
+
+    /**
+     * Update password for User
+     * @param email The email of the user which will be updated
+     * @param password The new password that will be set
+     */
+    fun setPassword(email: String, password: String) {
+        val userObject = this.userRepository.findByEmail(email)
+            ?: throw ResourceNotFoundException("User with email ${email} was not found")
+
+        val updatedUser =
+            userObject.let {
+                User(
+                    email = it.email,
+                    role = UserRole.USER,
+                    password = passwordEncoder.encode(password)
+                )
+        }
+        this.userRepository.save(updatedUser)
+
     }
 
     /**
@@ -154,7 +274,7 @@ class UserService(
      * @return true if the user has completed the submission
      */
     private fun hasUserCompletedSubmission(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.IN_REVIEW, SubmissionStates.SUBMITTED)
+        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.SUBMITTED)
     }
 
     /**

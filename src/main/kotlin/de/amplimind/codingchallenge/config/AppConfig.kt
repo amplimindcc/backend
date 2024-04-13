@@ -1,9 +1,11 @@
 package de.amplimind.codingchallenge.config
 
+import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import org.springframework.boot.CommandLineRunner
@@ -22,6 +24,7 @@ import java.sql.Timestamp
 class AppConfig(
     private val userRepository: UserRepository,
     private val submissionRepository: SubmissionRepository,
+    private val projectRepository: ProjectRepository,
 ) {
     @Bean
     fun userDetailsService(): UserDetailsService {
@@ -52,7 +55,7 @@ class AppConfig(
     @Bean
     fun commandLineRunner(): CommandLineRunner {
         return CommandLineRunner {
-            // TODO just some example data for us, REMOVE LATER
+            // TODO just some example data for us, REMOVE LATER (but move data for tests)
 
             val admin =
                 User(
@@ -128,6 +131,22 @@ class AppConfig(
                 )
 
             this.submissionRepository.saveAll(listOf(inImplementationSubmission, submittedSubmission, initUserSubmission, userSubmission))
+
+            val project1 =
+                Project(
+                    title = "Test Project",
+                    description = "This is a test description",
+                    active = true,
+                )
+
+            val project2 =
+                Project(
+                    title = "Test Project 2",
+                    description = "This is a test description",
+                    active = false,
+                )
+
+            this.projectRepository.saveAll(listOf(project1, project2))
         }
     }
 }

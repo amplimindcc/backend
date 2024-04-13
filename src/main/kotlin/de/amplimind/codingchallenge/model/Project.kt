@@ -6,6 +6,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 
+/**
+ * Represents a project.
+ * A project is a collection of tasks which a user has to fulfill.
+ */
 @Entity
 @Table(name = "projects")
 class Project(
