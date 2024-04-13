@@ -132,7 +132,7 @@ class UserService(
      * @return true if the user has completed the submission
      */
     private fun hasUserCompletedSubmission(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.IN_REVIEW, SubmissionStates.SUBMITTED)
+        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.SUBMITTED)
     }
 
     /**
