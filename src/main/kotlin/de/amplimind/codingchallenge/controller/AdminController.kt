@@ -58,7 +58,8 @@ class AdminController(
 
     @Operation(summary = "Endpoint for changing the role of a user")
     @ApiResponse(responseCode = "200", description = "User role was changed successfully.")
-    @ApiResponse(responseCode = "400", description = "If the new role which should be set is INIT.")
+    @ApiResponse(responseCode = "400", description = "If the role change was not successful")
+    @ApiResponse(responseCode = "401", description = "If no authentication is provided.")
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
     @PutMapping("change/role")
     fun changeRole(

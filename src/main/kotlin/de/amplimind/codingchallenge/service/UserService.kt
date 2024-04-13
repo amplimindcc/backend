@@ -11,6 +11,7 @@ import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import de.amplimind.codingchallenge.utils.UserUtils
 import org.springframework.stereotype.Service
 import kotlin.jvm.Throws
 
@@ -56,6 +57,12 @@ class UserService(
         if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
             // Cannot change user role to INIT
             throw IllegalArgumentException("Cannot change user role to INIT")
+        }
+
+        val user = UserUtils.fetchLoggedInUser()
+
+        if (user.email == changeUserRoleRequestDTO.email) {
+            throw IllegalArgumentException("Cannot change own role")
         }
 
         val foundUser =
