@@ -23,4 +23,9 @@ enum class UserStatus {
      * User has submitted his submission
      */
     SUBMITTED,
+
+    /**
+     * User has been deleted
+     */
+    DELETED
 }

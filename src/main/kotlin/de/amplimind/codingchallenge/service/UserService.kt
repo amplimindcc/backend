@@ -83,7 +83,7 @@ class UserService(
         return UserInfoDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
-            status = extractUserStatus(user))
+            status = UserStatus.DELETED)
     }
 
     /**
