@@ -55,7 +55,7 @@ class AppConfig(
     @Bean
     fun commandLineRunner(): CommandLineRunner {
         return CommandLineRunner {
-            // TODO just some example data for us, REMOVE LATER
+            // TODO just some example data for us, REMOVE LATER (but move data for tests)
 
             val admin =
                 User(
