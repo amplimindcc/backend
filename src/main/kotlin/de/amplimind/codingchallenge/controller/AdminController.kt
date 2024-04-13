@@ -4,7 +4,6 @@ import de.amplimind.codingchallenge.config.SecurityConfig
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
-import de.amplimind.codingchallenge.service.EmailService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.service.UserService
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.*
 class AdminController(
     private val projectService: ProjectService,
     private val userService: UserService,
-    private val emailService: EmailService,
     private val submissionService: SubmissionService,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")

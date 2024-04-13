@@ -142,7 +142,7 @@ class UserService(
         val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
         val randomPwd: CharSequence = ThreadLocalRandom.current()
-            .ints(STRING_LENGTH.toLong(), 0, charPool.size)
+            .ints(STRING_LENGTH, 0, charPool.size)
             .asSequence()
             .map(charPool::get)
             .joinToString("")
