@@ -12,10 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.get
-import org.springframework.test.web.servlet.post
-import org.springframework.test.web.servlet.put
+import org.springframework.test.web.servlet.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
@@ -134,4 +131,36 @@ internal class AdminControllerTest
                     status { isNotFound() }
                 }
         }
+
+        /**
+         * Test that a user can be deleted successfully.
+         */
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_deleteUserByEmail_success() {
+            val email = "user@web.de"
+
+            this.mockMvc.delete("/v1/admin/user/$email")
+                    .andExpect {
+                        status { isOk() }
+                        jsonPath("\$.email") {
+                            value(email)
+                        }
+                    }
+        }
+
+        /**
+         * Test that an exception is thrown when trying to delete a user that does not exist.
+         */
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_deleteUserByEmail_failure() {
+            val email = "unknown@web.de"
+
+            this.mockMvc.delete("/v1/admin/user/$email")
+                    .andExpect {
+                        status { isNotFound() }
+                    }
+        }
     }
+
