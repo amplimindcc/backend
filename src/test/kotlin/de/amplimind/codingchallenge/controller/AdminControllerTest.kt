@@ -13,7 +13,6 @@ import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.*
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * Test class for [AdminController].
