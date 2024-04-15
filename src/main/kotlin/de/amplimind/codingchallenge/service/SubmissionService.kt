@@ -12,16 +12,17 @@ import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import kotlinx.coroutines.*
-
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.io.ByteArrayInputStream
-import java.io.OutputStreamWriter
+import org.springframework.web.multipart.MultipartFile
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URI
 import java.sql.Timestamp
+import java.util.*
 import java.util.zip.ZipInputStream
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.coroutines.EmptyCoroutineContext
+
 
 /**
  * Service for managing submissions.
@@ -30,15 +31,15 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 class SubmissionService(
     private val submissionRepository: SubmissionRepository,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
      * Adds a new Submission.
      * @param userEmail the email of the user who made the submission
      */
     suspend fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) {
-        // val foundSubmission =  UserService.fetchUserInfosForEmail(userEmail);
         val submission = this.submissionRepository.findByUserEmail(userEmail)
-            ?:throw ResourceNotFoundException("Submission with email ${userEmail} was not found");
+            ?:throw ResourceNotFoundException("Submission with email $userEmail was not found");
 
         // TODO: check if submission is too late
 
@@ -72,39 +73,14 @@ class SubmissionService(
         }
         val owner = userEmail.split("@")[0]
         val accessToken = "GitHub Access Token"
-        coroutineScope {
+        runBlocking(context = EmptyCoroutineContext) {
             unzipCode(submitSolutionRequestDTO.zipFileContent).forEach { entry ->
                 launch {
-                    makePutRequest(owner, entry.key, entry.value, accessToken)
+                    val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
+                    val fileContent = entry.value
+                    makePutRequest(owner, filepathWithoutFilename, fileContent, accessToken)
                 }
             }
-        }
-    }
-
-    /**
-     * Upload the code to the Repository.
-     * @param owner the owner of the repository
-     * @param filePath the filepath where the file should reside in the repository
-     * @param fileContent the content of the file that should be pushed
-     * @param accessToken the personal access token used for authentication
-     */
-    suspend fun makePutRequest(owner: String, filePath: String, fileContent: String, accessToken: String) {
-        withContext(Dispatchers.IO) {
-            val url = URI("https://api.github.com/repos/amplimindcc/${owner}/contents/${filePath}").toURL()
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "PUT"
-            connection.setRequestProperty("Accept", "application/vnd.github+json")
-            connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.doOutput = true
-
-            val jsonPayload = "{\"content\": \"${fileContent}\"}"
-            OutputStreamWriter(connection.outputStream).use { writer ->
-                writer.write(jsonPayload)
-            }
-
-            connection.disconnect()
         }
     }
 
@@ -120,16 +96,63 @@ class SubmissionService(
     }
 
     /**
+     * Upload the code to the Repository.
+     * @param owner the owner of the repository
+     * @param filePath the filepath where the file should reside in the repository
+     * @param fileContent the content of the file that should be pushed
+     * @param accessToken the personal access token used for authentication
+     */
+    suspend fun makePutRequest(owner: String, filePath: String, fileContent: String, accessToken: String) {
+        withContext(Dispatchers.IO) {
+            val url = URI("https://api.github.com/repos/amplimindcc/${owner}/contents${filePath}/").toURL()
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "PUT"
+            connection.setRequestProperty("Accept", "application/vnd.github+json")
+            connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+
+            val jsonPayload = "{\"content\": \"${fileContent}\"}"
+            OutputStreamWriter(connection.outputStream).use { writer ->
+                writer.write(jsonPayload)
+            }
+            connection.disconnect()
+        }
+    }
+
+    /**
+     * Upload the code to the Repository.
+     * @param filePath the owner of the repository
+     * @return the [ByteArray] of the file
+     */
+    fun zipToByteArray(filePath: String): ByteArray {
+        val currentDirectory = System.getProperty("user.dir") // Get the current directory
+        val zipFile = File(currentDirectory, filePath)
+        try {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            zipFile.inputStream().use { input ->
+                input.copyTo(byteArrayOutputStream)
+            }
+            val byteArray = byteArrayOutputStream.toByteArray()
+            return byteArray
+        } catch (e: Exception) {
+            throw e
+        }
+
+    }
+
+    /**
      * Unzip the zip file the user submitted
      * @param zipFileContent the content of the zip file
      * @return the [Map] of the files and their content that should be pushed to the Repository
      */
-    fun unzipCode(zipFileContent: ByteArray): Map<String, String> {
-        var files = mutableMapOf<String, String>()
+    fun unzipCode(zipFileContent: MultipartFile): Map<String, String> {
+        val files = mutableMapOf<String, String>()
         try {
-            val zipInputStream = ZipInputStream(ByteArrayInputStream(zipFileContent))
-            files = traverseFolder(zipInputStream, "", files)
-            zipInputStream.close()
+            ZipInputStream(zipFileContent.inputStream).use { zipInputStream ->
+                traverseFolder(zipInputStream, files)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -139,19 +162,16 @@ class SubmissionService(
     /**
      * recursively traverse through the zip folder
      * @param zipInputStream the zipfile
-     * @param path the current directory in the folder
      * @param files a map of the files and their paths
      * @return the [Map] of the files and their content base64 encoded
      */
-    @OptIn(ExperimentalEncodingApi::class)
-    fun traverseFolder(zipInputStream: ZipInputStream, path: String, files: MutableMap<String, String>): MutableMap<String, String> {
+    fun traverseFolder(zipInputStream: ZipInputStream, files: MutableMap<String, String>): MutableMap<String, String> {
         var entry = zipInputStream.nextEntry
         while (entry != null) {
             if(!entry.isDirectory) {
-                files[path] = Base64.encode(zipInputStream.readBytes())
+                files[entry.name] = Base64.getEncoder().encodeToString(zipInputStream.readBytes())
             } else {
-                val entryContent = zipInputStream.readBytes()
-                traverseFolder(ZipInputStream(ByteArrayInputStream(entryContent)), path.plus("/").plus(entry.name), files)
+                traverseFolder(zipInputStream, files)
             }
             entry = zipInputStream.nextEntry
         }
