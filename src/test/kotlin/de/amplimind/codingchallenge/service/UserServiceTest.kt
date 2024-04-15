@@ -1,25 +1,29 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
-import io.mockk.MockKAnnotations
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import io.mockk.slot
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
+
 
 /**
  * Test class for [UserService].
@@ -32,8 +36,14 @@ internal class UserServiceTest {
     @MockK
     private lateinit var submissionRepository: SubmissionRepository
 
+    @MockK
+    private lateinit var passwordEncoder: PasswordEncoder
+
     @InjectMockKs
     private lateinit var userService: UserService
+
+    @MockK
+    private lateinit var emailService: EmailService
 
     @BeforeEach
     fun setUp() = MockKAnnotations.init(this)
@@ -46,6 +56,8 @@ internal class UserServiceTest {
                 role = UserRole.ADMIN,
             )
     }
+
+
 
     /**
      * Test that a [IllegalArgumentException] is thrown when trying to change a user role to [UserRole.INIT].
@@ -159,5 +171,69 @@ internal class UserServiceTest {
 
         assert(result.size == storedUsers.size)
         assert(result.map { it.email }.toList().containsAll(storedUsers.map { it.email }))
+    }
+
+    /**
+     * Test a successful deletion of a user by email
+     */
+    @Test
+    fun test_successfullyDeletesUser() {
+        val emailToUse = "user@web.de"
+        val user = User(
+                email = emailToUse,
+                password = "password",
+                role = UserRole.USER,
+        )
+        val submission = Submission(
+                userEmail = emailToUse,
+                projectID = 1L,
+                status = SubmissionStates.SUBMITTED,
+                expirationDate = java.sql.Timestamp(System.currentTimeMillis()),
+                turnInDate = java.sql.Timestamp(System.currentTimeMillis()),
+        )
+
+        every { userRepository.findByEmail(emailToUse) } returns user
+        every { submissionRepository.findByUserEmail(emailToUse) } returns submission
+        every { submissionRepository.delete(submission) } just Runs
+        every { userRepository.delete(user) } just Runs
+
+        val result = userService.deleteUserByEmail(emailToUse)
+
+        assertEquals(emailToUse, result.email)
+        assertFalse(result.isAdmin)
+        assertEquals(UserStatus.DELETED, result.status)
+    }
+
+    /**
+     * Test that a [ResourceNotFoundException] is thrown when trying to delete a user that does not exist.
+     */
+    @Test
+    fun test_userNotFound() {
+        val emailToUse = "unknown@web.de"
+
+        every { userRepository.findByEmail(emailToUse) } returns null
+        every { submissionRepository.findByUserEmail(emailToUse) } returns null
+
+        assertThrows<ResourceNotFoundException> { userService.deleteUserByEmail(emailToUse) }
+    }
+
+    /**
+     * Test that a [UserSelfDeleteException] is thrown when the user tries to delete himself.
+     */
+    @Test
+    fun test_selfDelete() {
+        val emailToUse = "adminUser@web.de"
+        val user = User(
+                email = emailToUse,
+                password = "password",
+                role = UserRole.ADMIN,
+        )
+        every { userRepository.findByEmail(emailToUse) } returns user
+        every { submissionRepository.findByUserEmail(emailToUse) } returns null
+        every { userRepository.delete(user) } just Runs
+
+        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(emailToUse, null)
+
+        assertThrows<UserSelfDeleteException> { userService.deleteUserByEmail(emailToUse) }
     }
 }
