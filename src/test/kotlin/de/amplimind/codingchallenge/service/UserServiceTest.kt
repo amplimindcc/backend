@@ -45,9 +45,6 @@ internal class UserServiceTest {
     @MockK
     private lateinit var emailService: EmailService
 
-    @InjectMockKs
-
-
     @BeforeEach
     fun setUp() = MockKAnnotations.init(this)
 
