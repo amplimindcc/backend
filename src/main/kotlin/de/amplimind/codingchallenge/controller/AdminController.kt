@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
+import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
@@ -9,6 +10,7 @@ import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.service.UserService
+import de.amplimind.codingchallenge.utils.ValidationUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
@@ -53,10 +55,12 @@ class AdminController(
     @Operation(summary = "Endpoint for fetching the info for a user by email")
     @ApiResponse(responseCode = "200", description = "User info was fetched successfully.")
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
+    @ApiResponse(responseCode = "422", description = "Email supplied is not an email.")
     @GetMapping("fetch/projects/{email}")
     fun fetchUserInfosForEmail(
         @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
+        ValidationUtils.validateEmail(email)
         val userInfo = this.userService.fetchUserInfosForEmail(email)
         return ResponseEntity.ok(userInfo)
     }
@@ -64,10 +68,12 @@ class AdminController(
     @Operation(summary = "Endpoint for deleting a user by email")
     @ApiResponse(responseCode = "200", description = "User was deleted successfully.")
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
+    @ApiResponse(responseCode = "422", description = "Email supplied is not an email.")
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
         @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
+        ValidationUtils.validateEmail(email)
         val userInfo = this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok(userInfo)
     }
@@ -87,10 +93,12 @@ class AdminController(
     @Operation(summary = "Endpoint for creating applicant and emailing him the invite")
     @ApiResponse(responseCode = "200", description = "User info was fetched successfully.")
     @ApiResponse(responseCode = "409", description = "User already exists")
+    @ApiResponse(responseCode = "422", description = "Email supplied is not an email.")
     @GetMapping("invite/{email}")
     fun createInvite(
         @PathVariable email: String,
     ): ResponseEntity<UserInfoDTO> {
+        ValidationUtils.validateEmail(email)
         return ResponseEntity.ok(this.userService.handleInvite(email))
     }
 
@@ -98,10 +106,14 @@ class AdminController(
     @ApiResponse(responseCode = "200", description = "Submission state was changed successfully.")
     @ApiResponse(responseCode = "400", description = "If the submission is not in state from which it can be set to reviewed")
     @ApiResponse(responseCode = "404", description = "If the submission for the provided email was not found.")
+    @ApiResponse(responseCode = "422", description = "Email supplied is not an email.")
     @PutMapping("change/submissionstate/reviewed/{email}")
     fun changeSubmissionStateReviewed(
         @PathVariable email: String,
-    ) = ResponseEntity.ok(this.submissionService.changeSubmissionStateReviewed(email))
+    ): ResponseEntity<SubmissionInfoDTO> {
+        ValidationUtils.validateEmail(email)
+        return ResponseEntity.ok(this.submissionService.changeSubmissionStateReviewed(email))
+    }
 
     @Operation(summary = "Endpoint for changing the state of a submission to submitted")
     @ApiResponse(responseCode = "200", description = "Submission state was changed successfully.")
