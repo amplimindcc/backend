@@ -6,7 +6,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
@@ -14,7 +14,6 @@ import javax.crypto.spec.SecretKeySpec
  * Utils object for creating and validating a JWT as well as reading out certain claim keys
  */
 object JWTUtils {
-
     const val MAIL_KEY = "email"
     const val EXPIRATION_FROM_CREATION: Long = 5
 

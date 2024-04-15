@@ -10,7 +10,10 @@ import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.jwt.JWTUtils
-import de.amplimind.codingchallenge.model.*
+import de.amplimind.codingchallenge.model.Submission
+import de.amplimind.codingchallenge.model.SubmissionStates
+import de.amplimind.codingchallenge.model.User
+import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.utils.UserUtils
@@ -130,7 +133,7 @@ class UserService(
      * @param registerRequest
      */
 
-    fun handleRegister(registerRequest: RegisterRequestDTO)  {
+    fun handleRegister(registerRequest: RegisterRequestDTO) {
         val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
         val user =
             userRepository.findByEmail(email)
@@ -162,7 +165,7 @@ class UserService(
      * Create a new User
      * @param email The email of the user which should be created
      */
-    fun createUser(email: String): User  {
+    fun createUser(email: String): User {
         val foundUser: User? =
             this.userRepository.findByEmail(email)
 
@@ -183,7 +186,7 @@ class UserService(
         return newUser
     }
 
-    fun createPassword(length: Long): String  {
+    fun createPassword(length: Long): String {
         // create Random initial Password
         val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
@@ -194,7 +197,7 @@ class UserService(
             .joinToString("")
     }
 
-    fun generateSubmission(user: User)  {
+    fun generateSubmission(user: User) {
         // create new User
         val newSubmission =
             Submission(

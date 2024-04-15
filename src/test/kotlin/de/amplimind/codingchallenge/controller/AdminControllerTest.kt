@@ -12,7 +12,11 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.web.servlet.*
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.delete
+import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
 
 /**
  * Test class for [AdminController].
@@ -140,12 +144,12 @@ internal class AdminControllerTest
             val email = "user@web.de"
 
             this.mockMvc.delete("/v1/admin/user/$email")
-                    .andExpect {
-                        status { isOk() }
-                        jsonPath("\$.email") {
-                            value(email)
-                        }
+                .andExpect {
+                    status { isOk() }
+                    jsonPath("\$.email") {
+                        value(email)
                     }
+                }
         }
 
         /**
@@ -157,9 +161,8 @@ internal class AdminControllerTest
             val email = "unknown@web.de"
 
             this.mockMvc.delete("/v1/admin/user/$email")
-                    .andExpect {
-                        status { isNotFound() }
-                    }
+                .andExpect {
+                    status { isNotFound() }
+                }
         }
     }
-

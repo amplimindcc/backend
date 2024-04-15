@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.any
 import org.springframework.test.context.ActiveProfiles
-import java.util.*
+import java.util.Optional
 
 /**
  * Test class for [ProjectService].
