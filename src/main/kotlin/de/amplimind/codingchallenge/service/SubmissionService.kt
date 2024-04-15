@@ -34,7 +34,7 @@ class SubmissionService(
 
         // TODO: check if submission is too late
 
-        uploadCodeToRepository(submitSolutionRequestDTO, userEmail)
+        pushToRepo(submitSolutionRequestDTO, userEmail)
 
         // TODO: check linting with github api
 
@@ -58,7 +58,7 @@ class SubmissionService(
      * @param userEmail the email of the user who made the submission
      */
     // TODO: optimize requests
-    suspend fun uploadCodeToRepository(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) {
+    suspend fun pushToRepo(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) {
         if(!submissionGitRepositoryExists(userEmail)) {
             createSubmissionRepository(userEmail);
         }
@@ -67,10 +67,16 @@ class SubmissionService(
         runBlocking(context = EmptyCoroutineContext) {
             unzipCode(submitSolutionRequestDTO.zipFileContent).forEach { entry ->
                 launch {
-                    val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
+                    // val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
+                    val filePath = entry.key.substringAfter("/")
                     val fileContent = entry.value
-                    makePutRequest(owner, filepathWithoutFilename, fileContent, accessToken)
+                    makePutRequest(owner, filePath, fileContent, accessToken)
                 }
+            }
+            launch {
+                val readmePath = "README.md"
+                val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
+                makePutRequest(owner, readmePath, readmeContent, accessToken)
             }
         }
     }
@@ -95,7 +101,7 @@ class SubmissionService(
      */
     suspend fun makePutRequest(owner: String, filePath: String, fileContent: String, accessToken: String) {
         withContext(Dispatchers.IO) {
-            val url = URI("https://api.github.com/repos/amplimindcc/${owner}/contents${filePath}/").toURL()
+            val url = URI("https://api.github.com/repos/amplimindcc/${owner}/contents/${filePath}").toURL()
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "PUT"
             connection.setRequestProperty("Accept", "application/vnd.github+json")
