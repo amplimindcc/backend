@@ -22,7 +22,8 @@ class EmailService(private val sender: JavaMailSender) {
         message.setTo(email)
         message.subject = "test"
         // TODO: change localhost to Constant with actual Servername
-        message.text = "You have ${JWTUtils.EXPIRATION_FROM_CREATION} Days to start your Coding Challenge. After 5 Days the link below will expire localhost:8080/v1/auth/invite/$token"
+        message.text = "You have ${JWTUtils.EXPIRATION_FROM_CREATION} Days to start your Coding Challenge. " +
+            "After 5 Days the link below will expire localhost:8080/v1/auth/invite/$token"
         sender.send(message)
     }
 }

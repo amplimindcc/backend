@@ -10,9 +10,13 @@ import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
+import io.mockk.slot
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
@@ -23,7 +27,6 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
-
 
 /**
  * Test class for [UserService].
@@ -56,8 +59,6 @@ internal class UserServiceTest {
                 role = UserRole.ADMIN,
             )
     }
-
-
 
     /**
      * Test that a [IllegalArgumentException] is thrown when trying to change a user role to [UserRole.INIT].
@@ -179,18 +180,20 @@ internal class UserServiceTest {
     @Test
     fun test_successfullyDeletesUser() {
         val emailToUse = "user@web.de"
-        val user = User(
+        val user =
+            User(
                 email = emailToUse,
                 password = "password",
                 role = UserRole.USER,
-        )
-        val submission = Submission(
+            )
+        val submission =
+            Submission(
                 userEmail = emailToUse,
                 projectID = 1L,
                 status = SubmissionStates.SUBMITTED,
                 expirationDate = java.sql.Timestamp(System.currentTimeMillis()),
                 turnInDate = java.sql.Timestamp(System.currentTimeMillis()),
-        )
+            )
 
         every { userRepository.findByEmail(emailToUse) } returns user
         every { submissionRepository.findByUserEmail(emailToUse) } returns submission
@@ -223,11 +226,12 @@ internal class UserServiceTest {
     @Test
     fun test_selfDelete() {
         val emailToUse = "adminUser@web.de"
-        val user = User(
+        val user =
+            User(
                 email = emailToUse,
                 password = "password",
                 role = UserRole.ADMIN,
-        )
+            )
         every { userRepository.findByEmail(emailToUse) } returns user
         every { submissionRepository.findByUserEmail(emailToUse) } returns null
         every { userRepository.delete(user) } just Runs
