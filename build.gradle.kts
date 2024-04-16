@@ -38,6 +38,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0-RC1")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
     implementation("org.postgresql:postgresql:42.6.0")
+    implementation("commons-validator:commons-validator:1.8.0")
 
     runtimeOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.springdoc:springdoc-openapi-kotlin:1.8.0")

@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
+import de.amplimind.codingchallenge.exceptions.EmailFormatException
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
@@ -48,5 +49,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(NoAuthenticationException::class)
     fun handleNoAuthenticationException(ex: NoAuthenticationException): ResponseEntity<String> {
         return ResponseEntity("No authentication: ${ex.message}", HttpStatus.UNAUTHORIZED)
+    }
+
+    @ExceptionHandler(EmailFormatException::class)
+    fun handleNoAuthenticationException(ex: EmailFormatException): ResponseEntity<String> {
+        return ResponseEntity("Email is not an email: ${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
     }
 }
