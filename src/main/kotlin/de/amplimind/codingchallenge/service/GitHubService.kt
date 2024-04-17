@@ -25,33 +25,30 @@ class GitHubService (
      * @param userEmail the email of the user who made the submission
      */
     // TODO: optimize requests
-    suspend fun pushToRepo(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) {
-        if(!submissionGitRepositoryExists(userEmail)) {
-            createSubmissionRepository(userEmail);
-        }
+    suspend fun pushToRepo(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) = coroutineScope {
         val owner = userEmail.split("@")[0]
         val accessToken = "GitHub Access Token"
-        //runBlocking(context = EmptyCoroutineContext) {
-        coroutineScope {
-            val deferredFiles: List<Deferred<Result<Int>>> = SubmissionUtils.unzipCode(submitSolutionRequestDTO.zipFileContent).map { entry ->
-                async {
-                    // val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
-                    val filePath = entry.key.substringAfter("/")
-                    val fileContent = entry.value
-                    makePutRequest(owner, filePath, fileContent, accessToken)
-
-                }
-            }
-            val deferredReadMe = async {
-                val readmePath = "README.md"
-                val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
-                makePutRequest(owner, readmePath, readmeContent, accessToken)
-            }
-            val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredReadMe)
-//            if(statusCodes.all {it != 200}) {
-//
-//            }
+        if(!submissionGitRepositoryExists(userEmail)) {
+            launch {
+                createSubmissionRepository(owner, accessToken);
+            }.join()
         }
+        //runBlocking(context = EmptyCoroutineContext) {
+        val deferredFiles: List<Deferred<Result<Int>>> = SubmissionUtils.unzipCode(submitSolutionRequestDTO.zipFileContent).map { entry ->
+            async {
+                // val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
+                val filePath = entry.key.substringAfter("/")
+                val fileContent = entry.value
+                makePutRequest(owner, filePath, fileContent, accessToken)
+
+            }
+        }
+        val deferredReadMe = async {
+            val readmePath = "README.md"
+            val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
+            makePutRequest(owner, readmePath, readmeContent, accessToken)
+        }
+        val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredReadMe)
     }
 
     /**
@@ -102,8 +99,29 @@ class GitHubService (
      * Adds a new Submission Repository.
      * @param userEmail the email of the user who made the submission
      */
-    fun createSubmissionRepository(userEmail: String) {
+    suspend fun createSubmissionRepository(repoName: String, accessToken: String): Result<Int> {
+        return try {
+            val url = URI("https://api.github.com/orgs/amplimindcc/repos").toURL()
+            val connection = withContext(Dispatchers.IO) {
+                url.openConnection()
+            } as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Accept", "application/vnd.github+json")
+            connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
 
+            val jsonPayload = "{\"name\": \"${repoName}\",\"description\": \"This is the submission repository of ${repoName}\"}"
+            OutputStreamWriter(connection.outputStream).use { writer ->
+                writer.write(jsonPayload)
+            }
+            val statusCode = connection.responseCode
+            connection.disconnect()
+            Result.success(statusCode)
+        } catch (e: IOException) {
+            Result.failure(e)
+        }
     }
 
 }
