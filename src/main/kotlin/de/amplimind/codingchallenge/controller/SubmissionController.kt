@@ -1,9 +1,12 @@
 package de.amplimind.codingchallenge.controller
 
+import de.amplimind.codingchallenge.dto.LintResultDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.service.GitHubService
 import de.amplimind.codingchallenge.service.SubmissionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/v1/submission")
 class SubmissionController (
     private val submissionService: SubmissionService,
+    private val gitHubService: GitHubService,
 ) {
     @Operation(summary = "Endpoint for submitting a solution.")
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
@@ -21,5 +25,15 @@ class SubmissionController (
     ) {
         val user: Any? = SecurityContextHolder.getContext().authentication.name;
         this.submissionService.submitCode(submitSolutionRequestDTO, user.toString())
+    }
+
+    @Operation(summary = "Endpoint for submitting a solution.")
+    @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
+    @GetMapping("/lint/{user}")
+    fun submit(
+        @PathVariable email: String,
+    ) : ResponseEntity<LintResultDTO> {
+        val lintResult = this.gitHubService.getLintingResult(email)
+        return ResponseEntity.ok(lintResult)
     }
 }
