@@ -86,6 +86,13 @@ class GitHubService (
         return submission.status.matchesAny(SubmissionStates.SUBMITTED);
     }
 
+    /**
+     * creates a https request to the GitHub api.
+     * @param url the endpoint of the GitHub api
+     * @param requestMethod the http request method to be used
+     * @param jsonPayload the payload that should be sent in the request body
+     * @return the [Result] of the http request
+     */
     suspend fun createHttpRequest(url: String, requestMethod: String, jsonPayload: String): Result<Int> {
         return try {
             val url = URI("https://api.github.com/${url}").toURL()
