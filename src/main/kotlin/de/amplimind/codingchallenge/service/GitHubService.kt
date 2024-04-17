@@ -5,17 +5,14 @@ import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import org.springframework.stereotype.Service
-import java.util.*
-
 import de.amplimind.codingchallenge.submission.SubmissionUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import org.springframework.stereotype.Service
+import java.io.IOException
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URI
+import java.util.*
 
 @Service
 class GitHubService (
@@ -36,19 +33,24 @@ class GitHubService (
         val accessToken = "GitHub Access Token"
         //runBlocking(context = EmptyCoroutineContext) {
         coroutineScope {
-            SubmissionUtils.unzipCode(submitSolutionRequestDTO.zipFileContent).forEach { entry ->
-                launch {
+            val deferredFiles: List<Deferred<Result<Int>>> = SubmissionUtils.unzipCode(submitSolutionRequestDTO.zipFileContent).map { entry ->
+                async {
                     // val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
                     val filePath = entry.key.substringAfter("/")
                     val fileContent = entry.value
                     makePutRequest(owner, filePath, fileContent, accessToken)
+
                 }
             }
-            launch {
+            val deferredReadMe = async {
                 val readmePath = "README.md"
                 val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
                 makePutRequest(owner, readmePath, readmeContent, accessToken)
             }
+//            val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredReadMe).bo
+//            if(statusCodes.all {it != 200}) {
+//
+//            }
         }
     }
 
@@ -70,10 +72,12 @@ class GitHubService (
      * @param fileContent the content of the file that should be pushed
      * @param accessToken the personal access token used for authentication
      */
-    suspend fun makePutRequest(owner: String, filePath: String, fileContent: String, accessToken: String) {
-        withContext(Dispatchers.IO) {
+    suspend fun makePutRequest(owner: String, filePath: String, fileContent: String, accessToken: String): Result<Int> {
+        return try {
             val url = URI("https://api.github.com/repos/amplimindcc/${owner}/contents/${filePath}").toURL()
-            val connection = url.openConnection() as HttpURLConnection
+            val connection = withContext(Dispatchers.IO) {
+                url.openConnection()
+            } as HttpURLConnection
             connection.requestMethod = "PUT"
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("Authorization", "Bearer $accessToken")
@@ -85,7 +89,11 @@ class GitHubService (
             OutputStreamWriter(connection.outputStream).use { writer ->
                 writer.write(jsonPayload)
             }
+            val statusCode = connection.responseCode
             connection.disconnect()
+            Result.success(statusCode)
+        } catch (e: IOException) {
+            Result.failure(e)
         }
     }
 

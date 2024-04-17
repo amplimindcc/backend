@@ -52,8 +52,6 @@ class SubmissionService(
             gitHubService.pushToRepo(submitSolutionRequestDTO, userEmail)
         }
 
-        // TODO: check linting with github api
-
         val updatedSubmission =
             submission.let {
                 Submission(
