@@ -31,6 +31,7 @@ import kotlin.streams.asSequence
 class UserService(
     private val userRepository: UserRepository,
     private val submissionRepository: SubmissionRepository,
+    private val projectRepository: ProjectRepository,
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
 ) {
@@ -165,6 +166,7 @@ class UserService(
      * Create a new User
      * @param email The email of the user which should be created
      */
+     @Transactional
     fun createUser(email: String): User {
         val foundUser: User? =
             this.userRepository.findByEmail(email)
@@ -198,12 +200,13 @@ class UserService(
     }
 
     fun generateSubmission(user: User) {
-        // create new User
+        // create new Submission
+        val activeProjectIds = projectRepository.findAllActiveProjects()
         val newSubmission =
             Submission(
                 userEmail = user.email,
                 expirationDate = Timestamp(0),
-                projectID = (0..<submissionRepository.count()).random(),
+                projectID = activeProjectIds[Random.nextInt(activeProjectIds.size)],
                 turnInDate = Timestamp(0),
                 status = SubmissionStates.INIT,
             )
