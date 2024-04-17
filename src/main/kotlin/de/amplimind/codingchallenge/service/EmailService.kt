@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.jwt.JWTUtils
+import de.amplimind.codingchallenge.utils.JWTUtils
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service

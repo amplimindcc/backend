@@ -3,9 +3,11 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
+import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.repository.ProjectRepository
+import de.amplimind.codingchallenge.repository.SubmissionRepository
 import org.springframework.stereotype.Service
 
 /**
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service
 @Service
 class ProjectService(
     private val projectRepository: ProjectRepository,
+    private val submissionRepository: SubmissionRepository,
 ) {
     /**
      * Adds a new project.
@@ -62,5 +65,17 @@ class ProjectService(
 
         storedProject.title = changeProjectTitleRequestDTO.newTitle
         return this.projectRepository.save(storedProject)
+    }
+
+    /**
+     * Deletes a project based on the supplied id
+     *
+     * @param id the id of the project to be deleted
+     */
+    fun deleteProject(id: Long) {
+        if (this.submissionRepository.findByProjectID(id).isNotEmpty()) {
+            throw ProjectInUseException("Project is still in use!")
+        }
+        this.projectRepository.deleteById(id)
     }
 }

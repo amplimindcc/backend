@@ -1,4 +1,4 @@
-package de.amplimind.codingchallenge.jwt
+package de.amplimind.codingchallenge.utils
 
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import io.jsonwebtoken.Claims
