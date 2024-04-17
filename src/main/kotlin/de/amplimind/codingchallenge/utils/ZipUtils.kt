@@ -1,4 +1,4 @@
-package de.amplimind.codingchallenge.ziputils
+package de.amplimind.codingchallenge.utils
 
 import de.amplimind.codingchallenge.exceptions.ZipBombException
 import org.springframework.web.multipart.MultipartFile

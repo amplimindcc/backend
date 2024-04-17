@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.controller.exceptionhandler
 import de.amplimind.codingchallenge.exceptions.EmailFormatException
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
+import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
@@ -54,5 +55,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(EmailFormatException::class)
     fun handleNoAuthenticationException(ex: EmailFormatException): ResponseEntity<String> {
         return ResponseEntity("Email is not an email: ${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
+    }
+
+    @ExceptionHandler(ProjectInUseException::class)
+    fun handleProjectIsUseException(ex: ProjectInUseException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst deleting project: ${ex.message}", HttpStatus.CONFLICT)
     }
 }

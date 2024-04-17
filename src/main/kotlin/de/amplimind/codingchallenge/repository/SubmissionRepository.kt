@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository
  */
 interface SubmissionRepository : JpaRepository<Submission, Long> {
     fun findByUserEmail(userEmail: String): Submission?
+
+    fun findByProjectID(projectId: Long): List<Submission>
 }
