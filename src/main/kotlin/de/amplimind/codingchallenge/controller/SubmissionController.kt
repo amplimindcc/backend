@@ -16,7 +16,7 @@ class SubmissionController (
     @Operation(summary = "Endpoint for submitting a solution.")
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
     @PostMapping("/submit")
-    suspend fun submit(
+    fun submit(
         @RequestBody submitSolutionRequestDTO: SubmitSolutionRequestDTO
     ) {
         val user: Any? = SecurityContextHolder.getContext().authentication.name;
