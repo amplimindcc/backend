@@ -47,7 +47,7 @@ class GitHubService (
                 val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
                 makePutRequest(owner, readmePath, readmeContent, accessToken)
             }
-//            val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredReadMe).bo
+            val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredReadMe)
 //            if(statusCodes.all {it != 200}) {
 //
 //            }
