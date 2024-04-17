@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
+import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
@@ -13,6 +14,7 @@ import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.utils.JWTUtils
@@ -20,8 +22,10 @@ import de.amplimind.codingchallenge.utils.UserUtils
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.sql.Timestamp
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.random.Random
 import kotlin.streams.asSequence
 
 /**
@@ -136,6 +140,8 @@ class UserService(
 
     fun handleRegister(registerRequest: RegisterRequestDTO) {
         val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
+        val isAdmin: Boolean = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.ADMIN_KEY) as Boolean
+
         val user =
             userRepository.findByEmail(email)
                 ?: throw ResourceNotFoundException("User with email $email was not found")
@@ -144,21 +150,20 @@ class UserService(
             throw InvalidTokenException("Token was already used")
         }
 
-        setPassword(email, registerRequest.password)
+        setPassword(email, registerRequest.password, isAdmin)
     }
 
     /**
      * handle the Invite of a new applicant
      * @param email The email of the applicant which should be created and where the email should be sent to
      */
-
     fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user = createUser(inviteRequest)
-        emailService.sendEmail(inviteRequest.email)
+        emailService.sendEmail(inviteRequest)
         return UserInfoDTO(
             email = user.email,
-            isAdmin = user.role.matchesAny(UserRole.ADMIN),
-            status = extractUserStatus(user),
+            isAdmin = inviteRequest.isAdmin,
+            status = if (inviteRequest.isAdmin) UserStatus.UNREGISTERED else extractUserStatus(user),
         )
     }
 
@@ -166,7 +171,7 @@ class UserService(
      * Create a new User
      * @param email The email of the user which should be created
      */
-     @Transactional
+    @Transactional
     fun createUser(inviteRequest: InviteRequestDTO): User {
         val foundUser: User? =
             this.userRepository.findByEmail(inviteRequest.email)
@@ -183,10 +188,10 @@ class UserService(
             )
         this.userRepository.save(newUser)
 
-        if(!inviteRequest.isAdmin){
-            generateSubmission(newUser)
-        }
-        
+        if (!inviteRequest.isAdmin)
+            {
+                generateSubmission(newUser)
+            }
 
         return newUser
     }
@@ -204,7 +209,8 @@ class UserService(
 
     fun generateSubmission(user: User) {
         // create new Submission
-        val activeProjectIds = projectRepository.findAllActiveProjects()
+        // TODO maybe write specific method for this
+        val activeProjectIds = projectRepository.findByActive().filter { it.id != null }.filter { it.active }.map { it.id as Long }
         val newSubmission =
             Submission(
                 userEmail = user.email,
@@ -224,17 +230,14 @@ class UserService(
     fun setPassword(
         email: String,
         password: String,
+        isAdmin: Boolean,
     ) {
         val userObject =
             this.userRepository.findByEmail(email)
                 ?: throw ResourceNotFoundException("User with email $email was not found")
 
-        val userRole = UserRole.USER
+        val userRole = if (isAdmin) UserRole.ADMIN else UserRole.USER
 
-        if(submissionReposiory.findProjectByUser() == null){
-            userRole = UserRole.ADMIN
-        }
-        
         val updatedUser =
             userObject.let {
                 User(
@@ -252,6 +255,7 @@ class UserService(
      * @return the [UserStatus]
      */
     private fun extractUserStatus(user: User): UserStatus {
+        // TODO we might have to change this method
         if (user.role.matchesAny(UserRole.ADMIN)) {
             // An admin should not submit anything
             return UserStatus.REGISTERED

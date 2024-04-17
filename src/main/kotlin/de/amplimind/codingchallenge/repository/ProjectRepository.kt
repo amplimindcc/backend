@@ -3,11 +3,12 @@ package de.amplimind.codingchallenge.repository
 import de.amplimind.codingchallenge.model.Project
 import org.springframework.data.jpa.repository.JpaRepository
 
-interface ProjectRepository : JpaRepository<Project, Long>{
-    /**
-     * returns all ids from Projects which are active
-     */
+interface ProjectRepository : JpaRepository<Project, Long> {
 
-    @Query("SELECT p.id FROM projects p where r.active = true")
-    fun findAllActiveProjects(): List<long>?
+    /**
+     * Find all projects by active status.
+     * @param active the active status of the project
+     * @return a list of projects
+     */
+    fun findByActive(active: Boolean = true): List<Project>
 }

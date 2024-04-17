@@ -15,6 +15,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 object JWTUtils {
     const val MAIL_KEY = "email"
+    const val ADMIN_KEY = "admin"
     const val EXPIRATION_FROM_CREATION: Long = 5
 
     private val enc: AeadAlgorithm = Jwts.ENC.A256GCM
@@ -31,7 +32,7 @@ object JWTUtils {
      *
      * @return the token
      */
-    fun createToken(claims: Map<String, String>): String {
+    fun createToken(claims: Map<String, Any>): String {
         return Jwts.builder().claims().expiration(
             Date.from(Instant.now().plus(EXPIRATION_FROM_CREATION, ChronoUnit.DAYS)),
         ).add(claims).and().encryptWith(key, enc).compact()
@@ -75,7 +76,6 @@ object JWTUtils {
         token: String,
         claimKey: String,
     ): Any? {
-        // TODO return type to be specific
         return validateToken(token).getOrElse(claimKey) {
             throw IllegalArgumentException("Key is empty")
         }
