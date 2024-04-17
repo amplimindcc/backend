@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.LintResultDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
@@ -118,4 +119,7 @@ class GitHubService (
     }
 
 
+    fun getLintingResult(user: String): LintResultDTO {
+        return ""
+    }
 }
