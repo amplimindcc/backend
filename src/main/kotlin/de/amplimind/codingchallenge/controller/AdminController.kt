@@ -7,6 +7,7 @@ import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequest
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
+import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.service.UserService
@@ -90,16 +91,16 @@ class AdminController(
         return ResponseEntity.ok(this.userService.changeUserRole(changeUserRoleRequest))
     }
 
-    @Operation(summary = "Endpoint for creating applicant and emailing him the invite")
+    @Operation(summary = "Endpoint for creating User and emailing him the invite")
     @ApiResponse(responseCode = "200", description = "User info was fetched successfully.")
     @ApiResponse(responseCode = "409", description = "User already exists")
     @ApiResponse(responseCode = "422", description = "Email supplied is not an email.")
-    @GetMapping("invite/{email}")
+    @PostMapping("invite")
     fun createInvite(
-        @PathVariable email: String,
+        @RequestBody inviteRequest: InviteRequestDTO,
     ): ResponseEntity<UserInfoDTO> {
-        ValidationUtils.validateEmail(email)
-        return ResponseEntity.ok(this.userService.handleInvite(email))
+        ValidationUtils.validateEmail(inviteRequest.email)
+        return ResponseEntity.ok(this.userService.handleInvite(inviteRequest))
     }
 
     @Operation(summary = "Endpoint for changing the state of a submission to reviewed")
