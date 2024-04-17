@@ -6,6 +6,7 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.SubmissionUtils
+import jakarta.validation.Payload
 import kotlinx.coroutines.*
 import org.springframework.stereotype.Service
 import java.io.File
@@ -31,7 +32,9 @@ class GitHubService (
         val owner = userEmail.split("@")[0]
         if(!submissionGitRepositoryExists(userEmail)) {
             launch {
-                createSubmissionRepository(owner);
+                val repoUrl = "orgs/amplimindcc/repos"
+                val jsonPayload = "{\"name\": \"${owner}\",\"description\": \"This is the submission repository of ${owner}\"}"
+                createHttpRequest(repoUrl, "POST", jsonPayload);
             }.join()
         }
         //runBlocking(context = EmptyCoroutineContext) {
@@ -40,14 +43,18 @@ class GitHubService (
                 // val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
                 val filePath = entry.key.substringAfter("/")
                 val fileContent = entry.value
-                makePutRequest(owner, filePath, fileContent)
+                val codeUrl = "repos/amplimindcc/${owner}/contents/${filePath}"
+                val jsonPayload = "{\"content\": \"${fileContent}\"}"
+                createHttpRequest(codeUrl, "POST", jsonPayload)
 
             }
         }
         val deferredReadMe = async {
             val readmePath = "README.md"
             val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
-            makePutRequest(owner, readmePath, readmeContent)
+            val codeUrl = "repos/amplimindcc/${owner}/contents/${readmePath}"
+            val jsonPayload = "{\"content\": \"${readmeContent}\"}"
+            createHttpRequest(codeUrl, "POST", jsonPayload)
         }
         val deferredWorkflow = async {
             val workflowPath = ".github/workflows/lint.yml"
@@ -55,11 +62,16 @@ class GitHubService (
             val file = File(classLoader.getResource("resources/workflows/lint.yml")?.file)
             val byteArray = file.readBytes() // Read file contents as byte array
             val workflowContent = Base64.getEncoder().encodeToString(byteArray)
-            makePutRequest(owner, workflowPath, workflowContent)
+            val workFlowUrl = "repos/amplimindcc/${owner}/contents/${workflowPath}"
+            val jsonPayload = "{\"content\": \"${workflowContent}\"}"
+            createHttpRequest(workFlowUrl, "POST", jsonPayload)
         }
         val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredWorkflow, deferredReadMe)
         val deferredLinting = async {
-            triggerLintingWorkflow(owner, "lint")
+            val workflowName = "lint"
+            val lintUrl = "repos/amplimindcc/${owner}/actions/workflows/${workflowName}/dispatches"
+            val jsonPayload = "{\"ref\": \"main\"}"
+            createHttpRequest(lintUrl, "POST", jsonPayload)
         }
     }
 
@@ -74,28 +86,19 @@ class GitHubService (
         return submission.status.matchesAny(SubmissionStates.SUBMITTED);
     }
 
-    /**
-     * Upload the code to the Repository.
-     * @param owner the owner of the repository
-     * @param filePath the filepath where the file should reside in the repository
-     * @param fileContent the content of the file that should be pushed
-     * @param accessToken the personal access token used for authentication
-     * @return the [Result] of the PUT request
-     */
-    suspend fun makePutRequest(owner: String, filePath: String, fileContent: String): Result<Int> {
+    suspend fun createHttpRequest(url: String, requestMethod: String, jsonPayload: String): Result<Int> {
         return try {
-            val url = URI("https://api.github.com/repos/amplimindcc/${owner}/contents/${filePath}").toURL()
+            val url = URI("https://api.github.com/${url}").toURL()
             val connection = withContext(Dispatchers.IO) {
                 url.openConnection()
             } as HttpURLConnection
-            connection.requestMethod = "PUT"
+            connection.requestMethod = requestMethod
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("Authorization", "Bearer $accessToken")
             connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
             connection.setRequestProperty("Content-Type", "application/json")
             connection.doOutput = true
 
-            val jsonPayload = "{\"content\": \"${fileContent}\"}"
             OutputStreamWriter(connection.outputStream).use { writer ->
                 writer.write(jsonPayload)
             }
@@ -107,68 +110,5 @@ class GitHubService (
         }
     }
 
-
-    /**
-     * Adds a new Submission Repository.
-     * @param repoName the username of the user who made the submission
-     * @param accessToken the PAT token used for authentication with GitHub
-     * @return the [Result] of the POST request
-     */
-    suspend fun createSubmissionRepository(repoName: String): Result<Int> {
-        return try {
-            val url = URI("https://api.github.com/orgs/amplimindcc/repos").toURL()
-            val connection = withContext(Dispatchers.IO) {
-                url.openConnection()
-            } as HttpURLConnection
-            connection.requestMethod = "POST"
-            connection.setRequestProperty("Accept", "application/vnd.github+json")
-            connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.doOutput = true
-
-            val jsonPayload = "{\"name\": \"${repoName}\",\"description\": \"This is the submission repository of ${repoName}\"}"
-            OutputStreamWriter(connection.outputStream).use { writer ->
-                writer.write(jsonPayload)
-            }
-            val statusCode = connection.responseCode
-            connection.disconnect()
-            Result.success(statusCode)
-        } catch (e: IOException) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Adds a new Submission Repository.
-     * @param owner the username of the user who made the submission
-     * @param workflowName the name of the workflow that should be triggered
-     * @param accessToken the PAT token used for authentication with GitHub
-     * @return the [Result] of the POST request
-     */
-    suspend fun triggerLintingWorkflow(owner: String, workflowName: String): Result<Int> {
-        return try {
-            val url = URI("https://api.github.com/repos/amplimindcc/${owner}/actions/workflows/${workflowName}/dispatches").toURL()
-            val connection = withContext(Dispatchers.IO) {
-                url.openConnection()
-            } as HttpURLConnection
-            connection.requestMethod = "POST"
-            connection.setRequestProperty("Accept", "application/vnd.github+json")
-            connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.doOutput = true
-
-            val jsonPayload = "{\"ref\": \"main\"}"
-            OutputStreamWriter(connection.outputStream).use { writer ->
-                writer.write(jsonPayload)
-            }
-            val statusCode = connection.responseCode
-            connection.disconnect()
-            Result.success(statusCode)
-        } catch (e: IOException) {
-            Result.failure(e)
-        }
-    }
 
 }
