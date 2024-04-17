@@ -152,9 +152,9 @@ class UserService(
      * @param email The email of the applicant which should be created and where the email should be sent to
      */
 
-    fun handleInvite(email: String): UserInfoDTO {
-        val user = createUser(email)
-        emailService.sendEmail(email)
+    fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
+        val user = createUser(inviteRequest)
+        emailService.sendEmail(inviteRequest.email)
         return UserInfoDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
@@ -167,23 +167,26 @@ class UserService(
      * @param email The email of the user which should be created
      */
      @Transactional
-    fun createUser(email: String): User {
+    fun createUser(inviteRequest: InviteRequestDTO): User {
         val foundUser: User? =
-            this.userRepository.findByEmail(email)
+            this.userRepository.findByEmail(inviteRequest.email)
 
         if (foundUser != null) {
-            throw UserAlreadyExistsException("User with email $email already exists")
+            throw UserAlreadyExistsException("User with email $inviteRequest.email already exists")
         }
 
         val newUser =
             User(
-                email = email,
+                email = inviteRequest.email,
                 password = passwordEncoder.encode(createPassword(20)),
                 role = UserRole.INIT,
             )
         this.userRepository.save(newUser)
 
-        generateSubmission(newUser)
+        if(!inviteRequest.isAdmin){
+            generateSubmission(newUser)
+        }
+        
 
         return newUser
     }
@@ -226,11 +229,17 @@ class UserService(
             this.userRepository.findByEmail(email)
                 ?: throw ResourceNotFoundException("User with email $email was not found")
 
+        val userRole = UserRole.USER
+
+        if(submissionReposiory.findProjectByUser() == null){
+            userRole = UserRole.ADMIN
+        }
+        
         val updatedUser =
             userObject.let {
                 User(
                     email = it.email,
-                    role = UserRole.USER,
+                    role = userRole,
                     password = passwordEncoder.encode(password),
                 )
             }
