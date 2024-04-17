@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.UserProjectDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
@@ -77,5 +78,16 @@ class ProjectService(
             throw ProjectInUseException("Project is still in use!")
         }
         this.projectRepository.deleteById(id)
+    }
+
+    /**
+     * fetches the project by its id
+     * @param id of the project fetched
+     */
+    fun fetchProjectById(id:Long):UserProjectDTO{
+        val project =
+            this.projectRepository.findById(id)
+                .orElseThrow{ResourceNotFoundException("Project with id $id not found.")}
+        return UserProjectDTO(title = project.title,description = project.description)
     }
 }

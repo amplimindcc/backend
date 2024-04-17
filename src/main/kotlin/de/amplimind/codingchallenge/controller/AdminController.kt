@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.controller
 import de.amplimind.codingchallenge.config.SecurityConfig
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
+import de.amplimind.codingchallenge.dto.UserProjectDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
@@ -131,4 +132,18 @@ class AdminController(
     fun changeProjectTitle(
         @RequestBody changeProjectTitleRequestDTO: ChangeProjectTitleRequestDTO,
     ) = ResponseEntity.ok(this.projectService.changeProjectTitle(changeProjectTitleRequestDTO))
+
+    @Operation(summary = "Get project of user")
+    @ApiResponse(responseCode = "200" , description = "Project fetched successfully")
+    @ApiResponse(responseCode = "404", description = "User does not have a project assigned")
+    @ApiResponse(responseCode = "422", description = "Supplied email is not an email")
+    @GetMapping("/fetch/project/{email}")
+    fun getUserProject(
+        @PathVariable email : String,
+    ): ResponseEntity<UserProjectDTO> {
+        ValidationUtils.validateEmail(email)
+        return ResponseEntity.ok(this.projectService.fetchProjectById(
+            this.submissionService.getProjectIdOfUser(email)
+        ))
+    }
 }
