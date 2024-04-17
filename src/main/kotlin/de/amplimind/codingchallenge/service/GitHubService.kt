@@ -68,6 +68,7 @@ class GitHubService (
      * @param filePath the filepath where the file should reside in the repository
      * @param fileContent the content of the file that should be pushed
      * @param accessToken the personal access token used for authentication
+     * @return the [Result] of the PUT request
      */
     suspend fun makePutRequest(owner: String, filePath: String, fileContent: String, accessToken: String): Result<Int> {
         return try {
@@ -97,7 +98,9 @@ class GitHubService (
 
     /**
      * Adds a new Submission Repository.
-     * @param userEmail the email of the user who made the submission
+     * @param repoName the username of the user who made the submission
+     * @param accessToken the PAT token used for authentication with GitHub
+     * @return the [Result] of the POST request
      */
     suspend fun createSubmissionRepository(repoName: String, accessToken: String): Result<Int> {
         return try {
