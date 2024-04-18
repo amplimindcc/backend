@@ -17,8 +17,10 @@ import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.UserUtils
+import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -28,6 +30,9 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Timestamp
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -43,7 +48,14 @@ class UserService(
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
     private val authenticationProvider: AuthenticationProvider,
+    private val resetPasswordTokenStorage: ResetPasswordTokenStorage,
 ) {
+    companion object {
+        private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
+        private const val RESET_PASSWORD_TEXT = "You have requested to reset your password for your Amplimind Coding Challenge account. Please follow the link below to set up a new password:"
+        private const val RESET_LINK_PREFIX = "http://localhost:5174/reset-password/"
+    }
+
     /**
      * Fetches all user infos [UserInfoDTO]
      */
@@ -288,8 +300,6 @@ class UserService(
             this.submissionRepository.findByUserEmail(user.email)
                 ?: throw IllegalStateException("User has no submission but is not in init state")
 
-
-
         if (hasUserCompletedSubmission(submission)) {
             return UserStatus.SUBMITTED
         }
@@ -341,5 +351,25 @@ class UserService(
      */
     private fun isUserRegistered(user: User): Boolean {
         return user.role.matchesAny(UserRole.USER, UserRole.ADMIN)
+    }
+
+    /**
+     * Send a reset password link to the user with the provided email
+     * @param email The email to which the reset password link should be sent
+     */
+    fun requestPasswordChange(email: String) {
+        ValidationUtils.validateEmail(email)
+        val token =
+            JWTUtils.createToken(
+                mapOf(JWTUtils.MAIL_KEY to email),
+                Date.from(
+                    Instant.now().plus(
+                        JWTUtils.RESET_PASSWORD_EXPIRATION_MIN,
+                        ChronoUnit.MINUTES,
+                    ),
+                ),
+            )
+        this.resetPasswordTokenStorage.addToken(token)
+        this.emailService.sendEmail(email, RESET_PASSWORD_SUBJECT, RESET_PASSWORD_TEXT + RESET_LINK_PREFIX + token)
     }
 }

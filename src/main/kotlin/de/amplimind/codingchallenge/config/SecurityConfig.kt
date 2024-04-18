@@ -16,7 +16,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 class SecurityConfig(
     private val authenticationProvider: AuthenticationProvider,
-    private val authenticationFilter: AuthenticationFilter,
 ) {
     companion object {
         val OPEN_API_PATHS =
@@ -41,7 +40,7 @@ class SecurityConfig(
         return http
             .csrf { it.disable() } // TODO Enable CSRF
             .authorizeHttpRequests {
-                it.requestMatchers("/v1/hello/**", "/v1/auth/**", "/whoami").permitAll()
+                it.requestMatchers("/v1/auth/**", "/v1/account/**").permitAll()
                     // TODO OPEN_API should be secured in the end (only admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
 
