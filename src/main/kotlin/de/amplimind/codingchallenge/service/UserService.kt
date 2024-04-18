@@ -188,10 +188,9 @@ class UserService(
             )
         this.userRepository.save(newUser)
 
-        if (!inviteRequest.isAdmin)
-            {
-                generateSubmission(newUser)
-            }
+        if (!inviteRequest.isAdmin) {
+            generateSubmission(newUser)
+        }
 
         return newUser
     }

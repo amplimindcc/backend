@@ -134,16 +134,28 @@ class AdminController(
     ) = ResponseEntity.ok(this.projectService.changeProjectTitle(changeProjectTitleRequestDTO))
 
     @Operation(summary = "Get project of user")
-    @ApiResponse(responseCode = "200" , description = "Project fetched successfully")
+    @ApiResponse(responseCode = "200", description = "Project fetched successfully")
     @ApiResponse(responseCode = "404", description = "User does not have a project assigned")
     @ApiResponse(responseCode = "422", description = "Supplied email is not an email")
     @GetMapping("/fetch/project/{email}")
     fun getUserProject(
-        @PathVariable email : String,
+        @PathVariable email: String,
     ): ResponseEntity<UserProjectDTO> {
         ValidationUtils.validateEmail(email)
-        return ResponseEntity.ok(this.projectService.fetchProjectById(
-            this.submissionService.getProjectIdOfUser(email)
-        ))
+        return ResponseEntity.ok(
+            this.projectService.fetchProjectById(
+                this.submissionService.getProjectIdOfUser(email),
+            ),
+        )
+    }
+
+    @Operation(summary = "Endpoint for deleting a project.")
+    @ApiResponse(responseCode = "200", description = "Project was deleted successfully")
+    @ApiResponse(responseCode = "409", description = "Project won't be deleted as it is still in use")
+    @DeleteMapping("/project/{projectId}")
+    fun deleteProject(
+        @PathVariable projectId: Long,
+    ) {
+        projectService.deleteProject(projectId)
     }
 }

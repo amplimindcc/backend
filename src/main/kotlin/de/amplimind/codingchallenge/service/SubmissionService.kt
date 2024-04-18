@@ -47,7 +47,7 @@ class SubmissionService(
         return updatedSubmission.toSumbissionInfoDTO()
     }
 
-    fun getProjectIdOfUser(email: String):Long{
+    fun getProjectIdOfUser(email: String): Long  {
         val submission =
             this.submissionRepository.findByUserEmail(email)
                 ?: throw ResourceNotFoundException("Submission for user with email $email was not found.")
