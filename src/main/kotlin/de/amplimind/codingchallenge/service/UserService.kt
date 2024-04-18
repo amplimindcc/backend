@@ -279,15 +279,16 @@ class UserService(
             return UserStatus.REGISTERED
         }
 
-        // The user should have a submission if its not the admin
+        if (user.role.matchesAny(UserRole.INIT)) {
+            return UserStatus.UNREGISTERED
+        }
 
+        // The user should have a submission if its not the admin
         val submission =
             this.submissionRepository.findByUserEmail(user.email)
                 ?: throw IllegalStateException("User has no submission but is not in init state")
 
-        if (user.role.matchesAny(UserRole.INIT)) {
-            return UserStatus.UNREGISTERED
-        }
+
 
         if (hasUserCompletedSubmission(submission)) {
             return UserStatus.SUBMITTED
