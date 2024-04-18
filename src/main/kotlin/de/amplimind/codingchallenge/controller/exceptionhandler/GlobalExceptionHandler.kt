@@ -5,6 +5,7 @@ import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
 import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import io.jsonwebtoken.ExpiredJwtException
@@ -66,5 +67,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(ProjectInUseException::class)
     fun handleProjectIsUseException(ex: ProjectInUseException): ResponseEntity<String> {
         return ResponseEntity("Error whilst deleting project: ${ex.message}", HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(TokenAlreadyUsedException::class)
+    fun handleTokenAlreadyUsedException(ex: TokenAlreadyUsedException): ResponseEntity<String> {
+        return ResponseEntity(ex.message, HttpStatus.CONFLICT)
     }
 }

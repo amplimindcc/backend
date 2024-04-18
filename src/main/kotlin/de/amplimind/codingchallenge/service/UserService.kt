@@ -2,11 +2,13 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
+import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
@@ -56,6 +58,8 @@ class UserService(
                 " Please follow the link below to set up a new password:"
         private const val RESET_LINK_PREFIX = "http://localhost:5174/reset-password/"
     }
+
+    private val CHECK_RESET_PASSWORD_LOCK = Any()
 
     /**
      * Fetches all user infos [UserInfoDTO]
@@ -370,7 +374,37 @@ class UserService(
                     ),
                 ),
             )
-        this.resetPasswordTokenStorage.addToken(token)
         this.emailService.sendEmail(email, RESET_PASSWORD_SUBJECT, RESET_PASSWORD_TEXT + RESET_LINK_PREFIX + token)
+    }
+
+    /**
+     * Change the password of the user with the provided token
+     * @param changePasswordRequestDTO The request to change the password
+     * @throws ResourceNotFoundException if the user with the email from the token was not found
+     * @throws InvalidTokenException if the token is invalid
+     */
+    fun changePassword(changePasswordRequestDTO: ChangePasswordRequestDTO) {
+        synchronized(CHECK_RESET_PASSWORD_LOCK) {
+            this.resetPasswordTokenStorage.isTokenUsed(changePasswordRequestDTO.token)
+                .takeIf { it }
+                ?.let { throw TokenAlreadyUsedException("Token has already be used") }
+
+            val email = JWTUtils.getClaimItem(changePasswordRequestDTO.token, JWTUtils.MAIL_KEY) as String
+
+            ValidationUtils.validateEmail(email)
+
+            val user = userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
+
+            val updatedUser =
+                user.let {
+                    User(
+                        email = it.email,
+                        role = it.role,
+                        password = passwordEncoder.encode(changePasswordRequestDTO.newPassword),
+                    )
+                }
+            userRepository.save(updatedUser)
+            this.resetPasswordTokenStorage.addToken(changePasswordRequestDTO.token)
+        }
     }
 }

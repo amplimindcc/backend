@@ -14,6 +14,7 @@ import java.util.Date
  * Tests for the [JWTUtils]
  */
 class JWTUtilsTest {
+
     @Test
     fun test_is_token_expired() {
         assert(!JWTUtils.isTokenExpired(notExpiredToken))

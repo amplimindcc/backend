@@ -34,6 +34,10 @@ class ResetPasswordTokenStorage {
         }
     }
 
+    fun isTokenUsed(token: String): Boolean {
+        return usedNonExpiredToken.contains(token)
+    }
+
     fun addToken(token: String) {
         this.usedNonExpiredToken.add(token)
     }
