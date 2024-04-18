@@ -19,6 +19,10 @@ import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.UserUtils
+import jakarta.servlet.http.HttpSession
+import org.springframework.security.authentication.AuthenticationProvider
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -38,6 +42,7 @@ class UserService(
     private val projectRepository: ProjectRepository,
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
+    private val authenticationProvider: AuthenticationProvider,
 ) {
     /**
      * Fetches all user infos [UserInfoDTO]
@@ -138,7 +143,10 @@ class UserService(
      * @param registerRequest
      */
 
-    fun handleRegister(registerRequest: RegisterRequestDTO) {
+    fun handleRegister(
+        registerRequest: RegisterRequestDTO,
+        session: HttpSession,
+    ) {
         val email: String = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.MAIL_KEY) as String
         val isAdmin: Boolean = JWTUtils.getClaimItem(registerRequest.token, JWTUtils.ADMIN_KEY) as Boolean
 
@@ -151,6 +159,17 @@ class UserService(
         }
 
         setPassword(email, registerRequest.password, isAdmin)
+
+        val authentication: Authentication =
+            authenticationProvider.authenticate(
+                UsernamePasswordAuthenticationToken(
+                    email,
+                    registerRequest.password,
+                ),
+            )
+
+        SecurityContextHolder.getContext().authentication = authentication
+        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext())
     }
 
     /**

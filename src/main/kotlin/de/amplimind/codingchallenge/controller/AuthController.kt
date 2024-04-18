@@ -48,7 +48,8 @@ class AuthController(
     @PostMapping("/register")
     fun invite(
         @RequestBody registerRequest: RegisterRequestDTO,
+        session: HttpSession,
     ) {
-        this.userService.handleRegister(registerRequest)
+        this.userService.handleRegister(registerRequest, session)
     }
 }
