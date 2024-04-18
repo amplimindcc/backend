@@ -2,6 +2,7 @@ package de.amplimind.codingchallenge.utils
 
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
 import java.time.Instant
@@ -62,8 +63,20 @@ object JWTUtils {
         return parsedClaims
     }
 
+    /**
+     * checks if a token is expired
+     * @param token the token to check
+     * @return true if the token is expired, false otherwise
+     */
     fun isTokenExpired(token: String): Boolean {
-        return Date.from(Instant.now()).after(Jwts.parser().decryptWith(key).build().parseEncryptedClaims(token).payload.expiration).not()
+        try {
+            Date.from(Instant.now()).after(Jwts.parser().decryptWith(key).build().parseEncryptedClaims(token).payload.expiration)
+
+            return false
+        } catch (expirationException: ExpiredJwtException) {
+            return true
+        }
+
     }
 
     /**
