@@ -2,10 +2,10 @@ package de.amplimind.codingchallenge.utils
 
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 import java.util.Date
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -16,7 +16,8 @@ import javax.crypto.spec.SecretKeySpec
 object JWTUtils {
     const val MAIL_KEY = "email"
     const val ADMIN_KEY = "admin"
-    const val EXPIRATION_FROM_CREATION: Long = 5
+    const val INVITE_LINK_EXPIRATION_DAYS: Long = 5
+    const val RESET_PASSWORD_EXPIRATION_MIN: Long = 30
 
     private val enc: AeadAlgorithm = Jwts.ENC.A256GCM
     private val key: SecretKey =
@@ -29,13 +30,14 @@ object JWTUtils {
      * creates a token with the payload of the supplied claims
      *
      * @param claims map of String for additional properties of the token
-     *
+     * @param expiration the expiration date of the token
      * @return the token
      */
-    fun createToken(claims: Map<String, Any>): String {
-        return Jwts.builder().claims().expiration(
-            Date.from(Instant.now().plus(EXPIRATION_FROM_CREATION, ChronoUnit.DAYS)),
-        ).add(claims).and().encryptWith(key, enc).compact()
+    fun createToken(
+        claims: Map<String, Any>,
+        expiration: Date,
+    ): String {
+        return Jwts.builder().claims().expiration(expiration).add(claims).and().encryptWith(key, enc).compact()
     }
 
     /**
@@ -59,6 +61,22 @@ object JWTUtils {
         }
 
         return parsedClaims
+    }
+
+    /**
+     * checks if a token is expired
+     * @param token the token to check
+     * @return true if the token is expired, false otherwise
+     */
+    fun isTokenExpired(token: String): Boolean {
+        try {
+            Date.from(Instant.now()).after(Jwts.parser().decryptWith(key).build().parseEncryptedClaims(token).payload.expiration)
+
+            return false
+        } catch (expirationException: ExpiredJwtException) {
+            return true
+        }
+
     }
 
     /**
