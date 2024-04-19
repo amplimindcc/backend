@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -52,7 +52,8 @@ class UserService(
 ) {
     companion object {
         private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
-        private const val RESET_PASSWORD_TEXT = "You have requested to reset your password for your Amplimind Coding Challenge account. Please follow the link below to set up a new password:"
+        private const val RESET_PASSWORD_TEXT = "You have requested to reset your password for your Amplimind Coding Challenge account." +
+                " Please follow the link below to set up a new password:"
         private const val RESET_LINK_PREFIX = "http://localhost:5174/reset-password/"
     }
 

@@ -2,7 +2,7 @@ package de.amplimind.codingchallenge.storage
 
 import de.amplimind.codingchallenge.utils.JWTUtils
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

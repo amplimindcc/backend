@@ -7,6 +7,7 @@ import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -44,7 +45,12 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException::class)
     fun handleInvalidTokenException(ex: InvalidTokenException): ResponseEntity<String> {
-        return ResponseEntity("${ex.message}", HttpStatus.BAD_REQUEST)
+        return ResponseEntity("Token is invalid!", HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(ExpiredJwtException::class)
+    fun handleExpiredJwtException(ex: ExpiredJwtException): ResponseEntity<String> {
+        return ResponseEntity("Token is expired!", HttpStatus.FORBIDDEN)
     }
 
     @ExceptionHandler(NoAuthenticationException::class)

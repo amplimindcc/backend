@@ -47,7 +47,8 @@ class AuthController(
 
     @Operation(summary = "Entry point for invite")
     @ApiResponse(responseCode = "200", description = "User registered successfully")
-    @ApiResponse(responseCode = "400", description = "Token is invalid")
+    @ApiResponse(responseCode = "400", description = "Token is invalid. Repeated requests with the same token will also fail!")
+    @ApiResponse(responseCode = "403", description = "Token is expired. Repeated requests with the same token will also fail!")
     @PostMapping("/register")
     fun invite(
         @RequestBody registerRequest: RegisterRequestDTO,

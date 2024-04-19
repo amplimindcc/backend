@@ -8,7 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 
 /**
  * Service to send emails
@@ -16,17 +16,21 @@ import java.util.*
 @Service
 class EmailService(private val mailsender: JavaMailSender) {
     // TODO remove this method and use the different send mail method
+
     /**
      * email to the applicant the URL to set the password
-     * @param email The email address, where the email will be sent
+     * @param inviteRequestDTO the dto containing all relevant information about the invite being sent out
      */
     fun sendEmail(inviteRequestDTO: InviteRequestDTO) {
         val claims = mapOf(JWTUtils.MAIL_KEY to inviteRequestDTO.email, JWTUtils.ADMIN_KEY to inviteRequestDTO.isAdmin)
-        val token = JWTUtils.createToken(claims, Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS)))
+        val token =
+            JWTUtils.createToken(
+                claims,
+                Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS)),
+            )
 
         val message = SimpleMailMessage()
-        // TODO: This can be rewritten to contain the actual invite later
-        // currently only a testing mail
+        // TODO: This can be rewritten to contain the actual invite later currently only a testing mail
         message.setTo(inviteRequestDTO.email)
         message.subject = "test"
         // TODO: change localhost to Constant with actual Servername

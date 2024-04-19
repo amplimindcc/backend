@@ -47,17 +47,18 @@ object JWTUtils {
      *
      * @return the claims of that token if it is valid
      *
-     * @throws SecurityException when the token is invalid
+     * @throws ExpiredJwtException when the token is expired
+     * @throws InvalidTokenException when the token is invalid
      */
+    @Throws(InvalidTokenException::class, ExpiredJwtException::class)
     fun validateToken(token: String): Claims {
         val parsedClaims: Claims
         try {
             parsedClaims = Jwts.parser().decryptWith(key).build().parseEncryptedClaims(token).payload
+        } catch (expirationException: ExpiredJwtException) {
+            throw expirationException
         } catch (e: Exception) {
-            throw InvalidTokenException("Invalid JWT token")
-        }
-        if (Date.from(Instant.now()).after(parsedClaims.expiration)) {
-            throw InvalidTokenException("Token is expired")
+            throw InvalidTokenException("Token is invalid!")
         }
 
         return parsedClaims
@@ -76,7 +77,6 @@ object JWTUtils {
         } catch (expirationException: ExpiredJwtException) {
             return true
         }
-
     }
 
     /**
@@ -88,8 +88,10 @@ object JWTUtils {
      * @return the item beneath the claim key
      *
      * @throws IllegalArgumentException if the key does not contain any items
-     * @throws SecurityException if the token is invalid
+     * @throws InvalidTokenException if the token is invalid
+     * @throws ExpiredJwtException if the token is expired
      */
+    @Throws(IllegalArgumentException::class, InvalidTokenException::class, Exception::class)
     fun getClaimItem(
         token: String,
         claimKey: String,
