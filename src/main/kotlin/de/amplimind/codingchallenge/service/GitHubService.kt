@@ -76,9 +76,9 @@ class GitHubService (
 
     /**
      * Push description of the user as the readme to the GitHub repository.
-     * @param apiClient the client for GitHub api alls
-     * @param submitSolutionRequestDTO the request to upload the code
-     * @param ownrepoNameer the owner and name of the repo
+     * @param apiClient the client for GitHub api call
+     * @param description the description the user sent
+     * @param repoName the owner and name of the repo
      */
     fun pushReadme(apiClient: GitHubApiClient, description: String, repoName: String) {
         val readmePath = "README.md"
@@ -101,13 +101,13 @@ class GitHubService (
 
     /**
      * Checks if the there already exists a GitHub Repository for the user.
-     * @param userEmail the email of the user who made the submission
+     * @param apiClient the client for GitHub api alls
+     * @param repoName the owner and name of the repo
      * @return the [Boolean] if it exists or not
      */
-    fun submissionGitRepositoryExists(userEmail: String): Boolean {
-        val submission = this.submissionRepository.findByUserEmail(userEmail)
-            ?: throw ResourceNotFoundException("Submission with email ${userEmail} was not found");
-        return submission.status.matchesAny(SubmissionStates.SUBMITTED);
+    fun submissionGitRepositoryExists(apiClient: GitHubApiClient, repoName: String): Boolean {
+        val getRepository = apiClient.getSubmissionRepository(repoName).execute()
+        return getRepository.isSuccessful
     }
 
     /**

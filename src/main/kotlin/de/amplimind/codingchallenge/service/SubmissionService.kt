@@ -8,6 +8,8 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
+import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.createGitHubApiClient
@@ -45,21 +47,22 @@ class SubmissionService(
         val newTurnInDate = Timestamp(System.currentTimeMillis())
 
         if(TimeUnit.MICROSECONDS.toDays(submissionExpirationDate.time - newTurnInDate.time) <= 0) {
-            // TODO: handle too late submission
+            throw TooLateSubmissionException("Too late Submission. Submission was due $submissionExpirationDate")
         }
 
         val gitHubApiClient = createGitHubApiClient(accessToken)
         val repoName = userEmail.replace('@', '.')
         runBlocking {
-            gitHubService.createRepo(gitHubApiClient, repoName)
+            if (gitHubService.submissionGitRepositoryExists(gitHubApiClient, repoName)) {
+                throw SolutionAlreadySubmittedException("Submission Repository already exists")
+            } else {
+                gitHubService.createRepo(gitHubApiClient, repoName)
+                delay(3000)
+            }
             gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
             delay(3000)
             gitHubService.triggerWorkflow(gitHubApiClient, repoName)
         }
-//        CoroutineScope(Dispatchers.IO).launch {
-//            if(!submissionGitRepositoryExists(userEmail)) {
-//            }
-//        }
 
         val updatedSubmission =
             submission.let {

@@ -6,16 +6,13 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Retrofit
-import retrofit2.http.Body
-import retrofit2.http.PUT
-import retrofit2.http.Path
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.POST
+import retrofit2.http.*
 
 interface GitHubApiClient {
-    @PUT("repos/amplimindcc/{owner}/contents/{filePath}")
+    @PUT("repos/amplimindcc/{repoName}/contents/{filePath}")
     fun pushFileCall(
-        @Path("owner") owner: String,
+        @Path("repoName") repoName: String,
         @Path("filePath") filePath: String,
         @Body submissionFile: SubmissionFile
     ): Call<Result<String>>
@@ -26,11 +23,16 @@ interface GitHubApiClient {
         @Body submissionRepository: SubmissionGitHubRepository
     ): Call<Result<String>>
 
-    @POST("repos/amplimindcc/{owner}/actions/workflows/{workflowName}/dispatches")
+    @POST("repos/amplimindcc/{repoName}/actions/workflows/{workflowName}/dispatches")
     fun triggerWorkflow(
-        @Path("owner") owner: String,
+        @Path("repoName") repoName: String,
         @Path("workflowName") workflowName: String,
         @Body workflowDispatch: WorkflowDispatch
+    ): Call<Result<String>>
+
+    @GET("repos/amplimindcc/{repoName}")
+    fun getSubmissionRepository(
+        @Path("repoName") repoName: String
     ): Call<Result<String>>
 }
 
