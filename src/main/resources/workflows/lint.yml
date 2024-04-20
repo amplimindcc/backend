@@ -1,7 +1,6 @@
 name: Lint
 on:
-  repository_dispatch:
-    types: [test_result]
+  workflow_dispatch:
 
 jobs:
   build:

@@ -12,12 +12,12 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
+import de.amplimind.codingchallenge.submission.createGitHubApiClient
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
 
 /**
  * Service for managing submissions.
@@ -28,7 +28,7 @@ class SubmissionService(
     private val gitHubService: GitHubService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-
+    val accessToken = ""
     /**
      * Adds a new Submission.
      * @param userEmail the email of the user who made the submission
@@ -48,9 +48,18 @@ class SubmissionService(
             // TODO: handle too late submission
         }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            gitHubService.pushToRepo(submitSolutionRequestDTO, userEmail)
+        val gitHubApiClient = createGitHubApiClient(accessToken)
+        val repoName = userEmail.replace('@', '.')
+        runBlocking {
+            gitHubService.createRepo(gitHubApiClient, repoName)
+            gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
+            delay(5000)
+            gitHubService.triggerWorkflow(gitHubApiClient, repoName)
         }
+//        CoroutineScope(Dispatchers.IO).launch {
+//            if(!submissionGitRepositoryExists(userEmail)) {
+//            }
+//        }
 
         val updatedSubmission =
             submission.let {

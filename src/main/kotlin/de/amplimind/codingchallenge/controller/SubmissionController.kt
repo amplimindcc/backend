@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 
-
 @RestController
 @RequestMapping("/v1/submission")
 class SubmissionController (
@@ -21,13 +20,13 @@ class SubmissionController (
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
     @PostMapping("/submit")
     fun submit(
-        @RequestBody submitSolutionRequestDTO: SubmitSolutionRequestDTO
+        @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO
     ) {
         val user: Any? = SecurityContextHolder.getContext().authentication.name;
         this.submissionService.submitCode(submitSolutionRequestDTO, user.toString())
     }
 
-    @Operation(summary = "Endpoint for submitting a solution.")
+    @Operation(summary = "Endpoint getting the linting result for a specific user.")
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
     @GetMapping("/lint/{user}")
     fun submit(
