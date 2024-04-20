@@ -35,7 +35,7 @@ class SubmissionService(
      * @param submitSolutionRequestDTO the zip file of the code and the description the user sent
      * @param userEmail the email of the user who made the submission
      */
-    fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) {
+    fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String): SubmissionInfoDTO {
         val submission = this.submissionRepository.findByUserEmail(userEmail)
             ?:throw ResourceNotFoundException("Submission with email $userEmail was not found");
 
@@ -64,18 +64,12 @@ class SubmissionService(
             gitHubService.triggerWorkflow(gitHubApiClient, repoName)
         }
 
-        val updatedSubmission =
-            submission.let {
-                Submission(
-                    userEmail = it.userEmail,
-                    expirationDate = it.expirationDate,
-                    projectID = it.projectID,
-                    turnInDate = newTurnInDate,
-                    status = SubmissionStates.SUBMITTED,
-                )
-            }
+        submission.turnInDate = newTurnInDate
+        submission.status = SubmissionStates.SUBMITTED
 
-        this.submissionRepository.save(updatedSubmission)
+        this.submissionRepository.save(submission)
+
+        return submission.toSumbissionInfoDTO()
     }
 
     /**

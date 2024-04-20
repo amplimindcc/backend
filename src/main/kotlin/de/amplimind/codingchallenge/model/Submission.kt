@@ -16,6 +16,6 @@ class Submission(
     val userEmail: String,
     val expirationDate: Timestamp,
     val projectID: Long,
-    val turnInDate: Timestamp,
+    var turnInDate: Timestamp,
     var status: SubmissionStates,
 )

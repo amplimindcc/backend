@@ -1,6 +1,8 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.dto.LintResultDTO
+import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
+import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.service.GitHubService
 import de.amplimind.codingchallenge.service.SubmissionService
@@ -21,9 +23,9 @@ class SubmissionController (
     @PostMapping("/submit")
     fun submit(
         @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO
-    ) {
+    ): ResponseEntity<SubmissionInfoDTO> {
         val user: Any? = SecurityContextHolder.getContext().authentication.name;
-        this.submissionService.submitCode(submitSolutionRequestDTO, user.toString())
+        return ResponseEntity.ok(this.submissionService.submitCode(submitSolutionRequestDTO, user.toString()))
     }
 
     @Operation(summary = "Endpoint getting the linting result for a specific user.")
@@ -32,7 +34,6 @@ class SubmissionController (
     fun submit(
         @PathVariable email: String,
     ) : ResponseEntity<LintResultDTO> {
-        val lintResult = this.gitHubService.getLintingResult(email)
-        return ResponseEntity.ok(lintResult)
+        return ResponseEntity.ok(this.gitHubService.getLintingResult(email))
     }
 }
