@@ -2,7 +2,6 @@ package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.dto.LintResultDTO
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
-import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.service.GitHubService
 import de.amplimind.codingchallenge.service.SubmissionService
