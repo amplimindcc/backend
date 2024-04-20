@@ -6,74 +6,96 @@ import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import de.amplimind.codingchallenge.submission.SubmissionUtils
-import jakarta.validation.Payload
+import de.amplimind.codingchallenge.submission.*
 import kotlinx.coroutines.*
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import java.io.File
-import java.io.IOException
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URI
 import java.util.*
 
 @Service
 class GitHubService (
     private val submissionRepository: SubmissionRepository,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
-    val accessToken = "GitHub Access Token"
     /**
      * Upload the code to the Repository.
      * @param submitSolutionRequestDTO the request to upload the code
-     * @param userEmail the email of the user who made the submission
+     * @param repoName the email of the user who made the submission
      */
     // TODO: optimize requests
-    suspend fun pushToRepo(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) = coroutineScope {
-        val owner = userEmail.split("@")[0]
-        if(!submissionGitRepositoryExists(userEmail)) {
-            launch {
-                val repoUrl = "orgs/amplimindcc/repos"
-                val jsonPayload = "{\"name\": \"${owner}\",\"description\": \"This is the submission repository of ${owner}\"}"
-                createHttpRequest(repoUrl, "POST", jsonPayload);
-            }.join()
-        }
-        //runBlocking(context = EmptyCoroutineContext) {
-        val deferredFiles: List<Deferred<Result<Int>>> = SubmissionUtils.unzipCode(submitSolutionRequestDTO.zipFileContent).map { entry ->
-            async {
-                // val filepathWithoutFilename = entry.key.substring(entry.key.indexOf("/", 0), entry.key.lastIndexOf("/")).ifEmpty { "/" }
+    fun pushToRepo(apiClient: GitHubApiClient, submitSolutionRequestDTO: SubmitSolutionRequestDTO, repoName: String) {
+        pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName)
+        pushWorkflow(apiClient, repoName)
+        pushReadme(apiClient, submitSolutionRequestDTO.description, repoName)
+    }
+
+    /**
+     * Create the GitHub submission repository.
+     * @param apiClient the client for GitHub api alls
+     * @param repoName the owner and name of the repo
+     */
+    fun createRepo(apiClient: GitHubApiClient, repoName: String) {
+        val organisation = "amplimindcc"
+        val description = "This is the submission repository of $repoName"
+        val submissionRepository = SubmissionGitHubRepository(repoName, description)
+        apiClient.createSubmissionRepository(organisation, submissionRepository).execute()
+    }
+
+    /**
+     * Push the code to the GitHub repository.
+     * @param apiClient the client for GitHub api alls
+     * @param submitSolutionRequestDTO the request to upload the code
+     * @param repoName the owner and name of the repo
+     */
+    fun pushCode(apiClient: GitHubApiClient, multipartFile: MultipartFile, repoName: String) {
+            SubmissionUtils.unzipCode(multipartFile).map { entry ->
                 val filePath = entry.key.substringAfter("/")
                 val fileContent = entry.value
-                val codeUrl = "repos/amplimindcc/${owner}/contents/${filePath}"
-                val jsonPayload = "{\"content\": \"${fileContent}\"}"
-                createHttpRequest(codeUrl, "POST", jsonPayload)
-
+                val submissionFileCode = SubmissionFile("committed by kotlin backend", fileContent)
+                apiClient.pushFileCall(repoName, filePath, submissionFileCode).execute()
             }
-        }
-        val deferredReadMe = async {
-            val readmePath = "README.md"
-            val readmeContent = Base64.getEncoder().encodeToString(submitSolutionRequestDTO.description.toByteArray())
-            val codeUrl = "repos/amplimindcc/${owner}/contents/${readmePath}"
-            val jsonPayload = "{\"content\": \"${readmeContent}\"}"
-            createHttpRequest(codeUrl, "POST", jsonPayload)
-        }
-        val deferredWorkflow = async {
-            val workflowPath = ".github/workflows/lint.yml"
-            val classLoader = this::class.java.classLoader
-            val file = File(classLoader.getResource("resources/workflows/lint.yml")?.file)
-            val byteArray = file.readBytes() // Read file contents as byte array
-            val workflowContent = Base64.getEncoder().encodeToString(byteArray)
-            val workFlowUrl = "repos/amplimindcc/${owner}/contents/${workflowPath}"
-            val jsonPayload = "{\"content\": \"${workflowContent}\"}"
-            createHttpRequest(workFlowUrl, "POST", jsonPayload)
-        }
-        val statusCodes = awaitAll(*deferredFiles.toTypedArray(), deferredWorkflow, deferredReadMe)
-        val deferredLinting = async {
-            val workflowName = "lint"
-            val lintUrl = "repos/amplimindcc/${owner}/actions/workflows/${workflowName}/dispatches"
-            val jsonPayload = "{\"ref\": \"main\"}"
-            createHttpRequest(lintUrl, "POST", jsonPayload)
-        }
+    }
+
+    /**
+     * Push the linting workflow to the GitHub repository.
+     * @param apiClient the client for GitHub api alls
+     * @param repoName the owner and name of the repo
+     */
+    fun pushWorkflow(apiClient: GitHubApiClient, repoName: String) {
+        val workflowPath = ".github/workflows/lint.yml"
+        val file = File(this::class.java.classLoader.getResource("workflows/lint.yml").file)
+        val byteArray = file.readBytes() // Read file contents as byte array
+        val workflowContent = Base64.getEncoder().encodeToString(byteArray)
+        val submissionFileWorkflow = SubmissionFile("committed by kotlin backend", workflowContent)
+        apiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow).execute()
+    }
+
+    /**
+     * Push description of the user as the readme to the GitHub repository.
+     * @param apiClient the client for GitHub api alls
+     * @param submitSolutionRequestDTO the request to upload the code
+     * @param ownrepoNameer the owner and name of the repo
+     */
+    fun pushReadme(apiClient: GitHubApiClient, description: String, repoName: String) {
+        val readmePath = "README.md"
+        val readmeContent = Base64.getEncoder().encodeToString(description.toByteArray())
+        val submissionFileReadme = SubmissionFile("committed by kotlin backend", readmeContent)
+        apiClient.pushFileCall(repoName, readmePath, submissionFileReadme).execute()
+    }
+
+    /**
+     * Trigger the lintig workflow.
+     * @param apiClient the client for GitHub api alls
+     * @param repoName the owner and name of the repo
+     */
+    fun triggerWorkflow(apiClient: GitHubApiClient, repoName: String) {
+        val workflowName = "lint.yml"
+        val branch = "main"
+        val workflowDispatch = WorkflowDispatch(branch)
+        apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch).execute()
     }
 
     /**
@@ -83,43 +105,17 @@ class GitHubService (
      */
     fun submissionGitRepositoryExists(userEmail: String): Boolean {
         val submission = this.submissionRepository.findByUserEmail(userEmail)
-            ?:throw ResourceNotFoundException("Submission with email ${userEmail} was not found");
+            ?: throw ResourceNotFoundException("Submission with email ${userEmail} was not found");
         return submission.status.matchesAny(SubmissionStates.SUBMITTED);
     }
 
     /**
-     * creates a https request to the GitHub api.
-     * @param url the endpoint of the GitHub api
-     * @param requestMethod the http request method to be used
-     * @param jsonPayload the payload that should be sent in the request body
-     * @return the [Result] of the http request
+     * Get the result of the linting workflow.
+     * @param userEmail the email of the user who made the submission
+     * @return the [LintResultDTO] of the submission repository
      */
-    suspend fun createHttpRequest(url: String, requestMethod: String, jsonPayload: String): Result<Int> {
-        return try {
-            val url = URI("https://api.github.com/${url}").toURL()
-            val connection = withContext(Dispatchers.IO) {
-                url.openConnection()
-            } as HttpURLConnection
-            connection.requestMethod = requestMethod
-            connection.setRequestProperty("Accept", "application/vnd.github+json")
-            connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.doOutput = true
-
-            OutputStreamWriter(connection.outputStream).use { writer ->
-                writer.write(jsonPayload)
-            }
-            val statusCode = connection.responseCode
-            connection.disconnect()
-            Result.success(statusCode)
-        } catch (e: IOException) {
-            Result.failure(e)
-        }
+    fun getLintingResult(userEmail: String): LintResultDTO {
+        return LintResultDTO("")
     }
 
-
-    fun getLintingResult(user: String): LintResultDTO {
-        return ""
-    }
 }
