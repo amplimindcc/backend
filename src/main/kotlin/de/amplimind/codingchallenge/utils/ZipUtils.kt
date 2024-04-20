@@ -18,6 +18,7 @@ object ZipUtils {
      * @return the [Map] of the files and their content that should be pushed to the Repository
      */
     fun unzipCode(zipFileContent: MultipartFile): Map<String, String> {
+        checkZip(zipFileContent)
         val files = mutableMapOf<String, String>()
         try {
             ZipInputStream(zipFileContent.inputStream).use { zipInputStream ->
@@ -91,8 +92,8 @@ object ZipUtils {
         } catch (e: Exception) {
             throw e
         }
-
     }
+
     /**
      * checks for zip bombs by parsing the files input stream. For that reason nested zip
      * files are not allowed. If a nested zip is found or the file size are exceeded immediately

@@ -30,6 +30,7 @@ class SubmissionService(
 
     /**
      * Adds a new Submission.
+     * @param submitSolutionRequestDTO the zip file of the code and the description the user sent
      * @param userEmail the email of the user who made the submission
      */
     fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String) {
@@ -52,7 +53,7 @@ class SubmissionService(
         runBlocking {
             gitHubService.createRepo(gitHubApiClient, repoName)
             gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
-            delay(5000)
+            delay(3000)
             gitHubService.triggerWorkflow(gitHubApiClient, repoName)
         }
 //        CoroutineScope(Dispatchers.IO).launch {
