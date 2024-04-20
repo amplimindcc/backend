@@ -1,6 +1,5 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
@@ -8,6 +7,8 @@ import de.amplimind.codingchallenge.extensions.DTOExtensions.toSumbissionInfoDTO
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
+import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.createGitHubApiClient
 import kotlinx.coroutines.*
@@ -26,6 +27,7 @@ class SubmissionService(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     val accessToken = ""
+
     /**
      * Adds a new Submission.
      * @param userEmail the email of the user who made the submission
