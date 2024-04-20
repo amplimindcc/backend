@@ -7,6 +7,7 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.*
+import de.amplimind.codingchallenge.utils.ZipUtils
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -51,7 +52,7 @@ class GitHubService (
      * @param repoName the owner and name of the repo
      */
     fun pushCode(apiClient: GitHubApiClient, multipartFile: MultipartFile, repoName: String) {
-            SubmissionUtils.unzipCode(multipartFile).map { entry ->
+            ZipUtils.unzipCode(multipartFile).map { entry ->
                 val filePath = entry.key.substringAfter("/")
                 val fileContent = entry.value
                 val submissionFileCode = SubmissionFile("committed by kotlin backend", fileContent)
