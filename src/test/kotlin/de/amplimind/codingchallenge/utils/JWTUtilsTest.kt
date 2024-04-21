@@ -14,7 +14,6 @@ import java.util.Date
  * Tests for the [JWTUtils]
  */
 class JWTUtilsTest {
-
     @Test
     fun test_is_token_expired() {
         assert(!JWTUtils.isTokenExpired(notExpiredToken))
@@ -35,7 +34,7 @@ class JWTUtilsTest {
 
         @JvmStatic
         @BeforeAll
-        fun setUp(): Unit {
+        fun setUp() {
             this.notExpiredToken = JWTUtils.createToken(mapOf(), Date.from(Instant.now().plus(1, ChronoUnit.DAYS)))
             this.expiredToken = JWTUtils.createToken(mapOf(), Date.from(Instant.now().minus(1, ChronoUnit.DAYS)))
         }

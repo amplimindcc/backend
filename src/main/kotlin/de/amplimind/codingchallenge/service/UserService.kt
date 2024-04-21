@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
@@ -54,12 +55,13 @@ class UserService(
 ) {
     companion object {
         private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
-        private const val RESET_PASSWORD_TEXT = "You have requested to reset your password for your Amplimind Coding Challenge account." +
+        private const val RESET_PASSWORD_TEXT =
+            "You have requested to reset your password for your Amplimind Coding Challenge account." +
                 " Please follow the link below to set up a new password:"
         private const val RESET_LINK_PREFIX = "http://localhost:5174/reset-password/"
     }
 
-    private val CHECK_RESET_PASSWORD_LOCK = Any()
+    private val checkResetPasswordLock = Any()
 
     /**
      * Fetches all user infos [UserInfoDTO]
@@ -384,7 +386,7 @@ class UserService(
      * @throws InvalidTokenException if the token is invalid
      */
     fun changePassword(changePasswordRequestDTO: ChangePasswordRequestDTO) {
-        synchronized(CHECK_RESET_PASSWORD_LOCK) {
+        synchronized(checkResetPasswordLock) {
             this.resetPasswordTokenStorage.isTokenUsed(changePasswordRequestDTO.token)
                 .takeIf { it }
                 ?.let { throw TokenAlreadyUsedException("Token has already be used") }
@@ -406,5 +408,13 @@ class UserService(
             userRepository.save(updatedUser)
             this.resetPasswordTokenStorage.addToken(changePasswordRequestDTO.token)
         }
+    }
+
+    /**
+     * checks if the current user is an admin
+     * @return if the current user is an admin
+     */
+    fun fetchLoggedInUserAdminStatus(): IsAdminDTO {
+        return IsAdminDTO(fetchUserInfosForEmail(UserUtils.fetchLoggedInUser().username).isAdmin)
     }
 }
