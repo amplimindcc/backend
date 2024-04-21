@@ -9,6 +9,7 @@ import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
 
 /**
@@ -50,6 +51,10 @@ class ProjectService(
             this.projectRepository.findById(changeProjectActiveStatusRequestDTO.projectId)
                 .orElseThrow { ResourceNotFoundException("Project with id ${changeProjectActiveStatusRequestDTO.projectId} not found.") }
 
+        if (storedProject.version != changeProjectActiveStatusRequestDTO.version) {
+            throw OptimisticLockingFailureException("Project has been updated since the last fetch.")
+        }
+
         storedProject.active = changeProjectActiveStatusRequestDTO.active
         return this.projectRepository.save(storedProject)
     }
@@ -63,6 +68,10 @@ class ProjectService(
         val storedProject =
             this.projectRepository.findById(changeProjectTitleRequestDTO.projectId)
                 .orElseThrow { ResourceNotFoundException("Project with id ${changeProjectTitleRequestDTO.projectId} not found.") }
+
+        if (storedProject.version != changeProjectTitleRequestDTO.version) {
+            throw OptimisticLockingFailureException("Project has been updated since the last fetch.")
+        }
 
         storedProject.title = changeProjectTitleRequestDTO.newTitle
         return this.projectRepository.save(storedProject)
