@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.springframework.data.annotation.Version
 import java.sql.Timestamp
 
 @Entity
@@ -18,4 +19,6 @@ class Submission(
     val projectID: Long,
     val turnInDate: Timestamp,
     var status: SubmissionStates,
+    @Version
+    var version: Long? = null
 )
