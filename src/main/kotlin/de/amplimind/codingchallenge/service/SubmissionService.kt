@@ -10,6 +10,7 @@ import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.createGitHubApiClient
+import de.amplimind.codingchallenge.utils.UserUtils
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -32,7 +33,8 @@ class SubmissionService(
      * @param submitSolutionRequestDTO the zip file of the code and the description the user sent
      * @param userEmail the email of the user who made the submission
      */
-    fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO, userEmail: String): SubmissionInfoDTO {
+    fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO): SubmissionInfoDTO {
+        val userEmail = UserUtils.fetchLoggedInUser().username
         val submission = this.submissionRepository.findByUserEmail(userEmail)
             ?:throw ResourceNotFoundException("Submission with email $userEmail was not found");
 

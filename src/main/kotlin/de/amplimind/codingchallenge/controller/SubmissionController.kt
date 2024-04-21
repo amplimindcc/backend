@@ -23,12 +23,11 @@ class SubmissionController (
     fun submit(
         @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO
     ): ResponseEntity<SubmissionInfoDTO> {
-        val user: Any? = SecurityContextHolder.getContext().authentication.name;
-        return ResponseEntity.ok(this.submissionService.submitCode(submitSolutionRequestDTO, user.toString()))
+        return ResponseEntity.ok(this.submissionService.submitCode(submitSolutionRequestDTO))
     }
 
-    @Operation(summary = "Endpoint getting the linting result for a specific user.")
-    @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
+    @Operation(summary = "Endpoint for getting the linting result for a specific user.")
+    @ApiResponse(responseCode = "200", description = "Get the linting results")
     @GetMapping("/lint/{user}")
     fun submit(
         @PathVariable email: String,

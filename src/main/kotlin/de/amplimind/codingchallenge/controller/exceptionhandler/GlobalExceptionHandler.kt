@@ -65,4 +65,9 @@ class GlobalExceptionHandler {
     fun handleTooLateSubmission(ex: SolutionAlreadySubmittedException): ResponseEntity<String> {
         return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.CONFLICT)
     }
+
+    @ExceptionHandler(UnzipException::class)
+    fun handleUnzipException(ex: UnzipException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst unzipping file: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
+    }
 }

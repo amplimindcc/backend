@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.utils
 
+import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.exceptions.ZipBombException
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
@@ -25,7 +26,7 @@ object ZipUtils {
                 traverseFolder(zipInputStream, files)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            throw UnzipException("Error while unzipping the file")
         }
         return files
     }
@@ -53,45 +54,6 @@ object ZipUtils {
             entry = zipInputStream.nextEntry
         }
         return files
-    }
-
-    private fun traverseFolder2(zipInputStream: ZipInputStream, files: MutableMap<String, String>): MutableMap<String, String> {
-        var entry = zipInputStream.nextEntry
-
-        while (entry != null) {
-            val buffer = ByteArray(1024)
-            var len: Int
-            val content = StringBuilder()
-            while (zipInputStream.read(buffer).also { len = it } > 0) {
-                content.append(String(buffer, 0, len))
-            }
-            println("Content:\n$content\n")
-            if (!entry.isDirectory) {
-                files[entry.name] = Base64.getEncoder().encodeToString(zipInputStream.readBytes())
-            }
-            entry = zipInputStream.nextEntry
-        }
-        return files
-    }
-
-    /**
-     * Upload the code to the Repository.
-     * @param filePath the owner of the repository
-     * @return the [ByteArray] of the file
-     */
-    fun zipToByteArray(filePath: String): ByteArray {
-        val currentDirectory = System.getProperty("user.dir") // Get the current directory
-        val zipFile = File(currentDirectory, filePath)
-        try {
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            zipFile.inputStream().use { input ->
-                input.copyTo(byteArrayOutputStream)
-            }
-            val byteArray = byteArrayOutputStream.toByteArray()
-            return byteArray
-        } catch (e: Exception) {
-            throw e
-        }
     }
 
     /**

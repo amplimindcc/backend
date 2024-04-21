@@ -23,6 +23,7 @@ class GitHubService (
 
     /**
      * Upload the code to the Repository.
+     * @param apiClient the client for GitHub api alls
      * @param submitSolutionRequestDTO the request to upload the code
      * @param repoName the email of the user who made the submission
      */
@@ -48,7 +49,7 @@ class GitHubService (
     /**
      * Push the code to the GitHub repository.
      * @param apiClient the client for GitHub api alls
-     * @param submitSolutionRequestDTO the request to upload the code
+     * @param multipartFile the code to push
      * @param repoName the owner and name of the repo
      */
     fun pushCode(apiClient: GitHubApiClient, multipartFile: MultipartFile, repoName: String) {
