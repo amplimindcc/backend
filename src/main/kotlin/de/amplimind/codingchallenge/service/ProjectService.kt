@@ -9,6 +9,7 @@ import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
 
 /**

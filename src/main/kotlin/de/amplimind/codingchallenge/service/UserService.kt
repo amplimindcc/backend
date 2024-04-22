@@ -25,6 +25,7 @@ import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -94,27 +95,28 @@ class UserService(
      * @return the [UserInfoDTO] of the deleted user
      */
     fun deleteUserByEmail(email: String): UserInfoDTO {
-        // Check if the user is trying to delete himself
-        val auth = SecurityContextHolder.getContext().authentication
-        val authenticatedUserEmail = auth?.name
-        if (authenticatedUserEmail == email) {
-            throw UserSelfDeleteException("User with email $email cannot delete himself")
-        }
+            // Check if the user is trying to delete himself
+            val auth = SecurityContextHolder.getContext().authentication
+            val authenticatedUserEmail = auth?.name
+            if (authenticatedUserEmail == email) {
+                throw UserSelfDeleteException("User with email $email cannot delete himself")
+            }
 
-        // Delete the submissions of the user
-        val submissions = this.submissionRepository.findByUserEmail(email)
-        if (submissions != null) {
-            this.submissionRepository.delete(submissions)
-        }
+            // Delete the submissions of the user
+            val submissions = this.submissionRepository.findByUserEmail(email)
+            if (submissions != null) {
+                this.submissionRepository.delete(submissions)
+            }
 
-        // Find the user & delete the user
-        val user = this.userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
-        this.userRepository.delete(user)
-        return UserInfoDTO(
-            email = user.email,
-            isAdmin = user.role.matchesAny(UserRole.ADMIN),
-            status = UserStatus.DELETED,
-        )
+            // Find the user & delete the user
+            val user = this.userRepository.findByEmail(email)
+                    ?: throw ResourceNotFoundException("User with email $email was not found")
+            this.userRepository.delete(user)
+            return UserInfoDTO(
+                    email = user.email,
+                    isAdmin = user.role.matchesAny(UserRole.ADMIN),
+                    status = UserStatus.DELETED,
+            )
     }
 
     /**
@@ -123,38 +125,37 @@ class UserService(
      * @return the [UserInfoDTO] of the changed user
      */
     fun changeUserRole(changeUserRoleRequestDTO: ChangeUserRoleRequestDTO): UserInfoDTO {
-        if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
-            // Cannot change user role to INIT
-            throw IllegalArgumentException("Cannot change user role to INIT")
-        }
-
-        val user = UserUtils.fetchLoggedInUser()
-
-        if (user.username == changeUserRoleRequestDTO.email) {
-            throw IllegalArgumentException("Cannot change own role")
-        }
-
-        val foundUser =
-            this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
-                ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
-
-        val updatedUser =
-            foundUser.let {
-                User(
-                    email = it.email,
-                    password = it.password,
-                    role = changeUserRoleRequestDTO.newRole,
-                )
+            if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
+                // Cannot change user role to INIT
+                throw IllegalArgumentException("Cannot change user role to INIT")
             }
 
-        // save the updated user
-        this.userRepository.save(updatedUser)
+            val user = UserUtils.fetchLoggedInUser()
 
-        return UserInfoDTO(
-            email = updatedUser.email,
-            isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
-            status = extractUserStatus(updatedUser),
-        )
+            if (user.username == changeUserRoleRequestDTO.email) {
+                throw IllegalArgumentException("Cannot change own role")
+            }
+
+            val foundUser =
+                    this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
+                            ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
+
+            val updatedUser =
+                    foundUser.let {
+                        User(
+                                email = it.email,
+                                password = it.password,
+                                role = changeUserRoleRequestDTO.newRole,
+                        )
+                    }
+            // save the updated user
+            this.userRepository.save(updatedUser)
+
+            return UserInfoDTO(
+                    email = updatedUser.email,
+                    isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
+                    status = extractUserStatus(updatedUser),
+            )
     }
 
     /**

@@ -5,6 +5,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.springframework.data.annotation.Version
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
@@ -16,6 +17,8 @@ class User(
     private val password: String? = null,
     @Enumerated(EnumType.STRING)
     val role: UserRole,
+    @Version
+    var version: Long? = null
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return listOf("ROLE_${role.name}").map { GrantedAuthority { it } }.toMutableList()
