@@ -220,8 +220,9 @@ class UserService(
             User(
                 email = inviteRequest.email,
                 password = passwordEncoder.encode(createPassword(20)),
-                role = UserRole.INIT,
+                role = if (inviteRequest.isAdmin) UserRole.ADMIN else UserRole.INIT,
             )
+
         this.userRepository.save(newUser)
 
         if (!inviteRequest.isAdmin) {
