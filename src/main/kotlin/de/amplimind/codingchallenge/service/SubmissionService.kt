@@ -31,7 +31,7 @@ class SubmissionService(
     /**
      * Adds a new Submission.
      * @param submitSolutionRequestDTO the zip file of the code and the description the user sent
-     * @param userEmail the email of the user who made the submission
+     * @return the [SubmissionInfoDTO] of the updated submission
      */
     fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO): SubmissionInfoDTO {
         val userEmail = UserUtils.fetchLoggedInUser().username

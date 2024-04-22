@@ -62,7 +62,7 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(SolutionAlreadySubmittedException::class)
-    fun handleTooLateSubmission(ex: SolutionAlreadySubmittedException): ResponseEntity<String> {
+    fun handleSolutionAlreadySubmittedException(ex: SolutionAlreadySubmittedException): ResponseEntity<String> {
         return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.CONFLICT)
     }
 
