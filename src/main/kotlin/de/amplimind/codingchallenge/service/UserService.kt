@@ -306,8 +306,7 @@ class UserService(
 
         // The user should have a submission if its not the admin
         val submission =
-            this.submissionRepository.findByUserEmail(user.email)
-                ?: throw IllegalStateException("User has no submission but is not in init state")
+            this.submissionRepository.findByUserEmail(user.email) ?: return UserStatus.REGISTERED
 
         if (hasUserCompletedSubmission(submission)) {
             return UserStatus.SUBMITTED
