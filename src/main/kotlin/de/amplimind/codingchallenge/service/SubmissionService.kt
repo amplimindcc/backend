@@ -23,7 +23,6 @@ class SubmissionService(
      * @return the [SubmissionInfoDTO] of the updated submission
      */
     fun changeSubmissionStateReviewed(email: String): SubmissionInfoDTO {
-        try {
             val submission =
                     this.submissionRepository.findByUserEmail(email)
                             ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")
@@ -47,9 +46,6 @@ class SubmissionService(
             this.submissionRepository.save(updatedSubmission)
 
             return updatedSubmission.toSumbissionInfoDTO()
-        } catch (ex: OptimisticLockingFailureException) {
-            throw IllegalStateException("The submission was updated by another transaction")
-        }
     }
 
     fun getProjectIdOfUser(email: String): Long {

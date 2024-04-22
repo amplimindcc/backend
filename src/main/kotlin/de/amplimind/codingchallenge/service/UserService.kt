@@ -93,7 +93,6 @@ class UserService(
      * @return the [UserInfoDTO] of the deleted user
      */
     fun deleteUserByEmail(email: String): UserInfoDTO {
-        try {
             // Check if the user is trying to delete himself
             val auth = SecurityContextHolder.getContext().authentication
             val authenticatedUserEmail = auth?.name
@@ -116,9 +115,6 @@ class UserService(
                     isAdmin = user.role.matchesAny(UserRole.ADMIN),
                     status = UserStatus.DELETED,
             )
-        } catch (ex: OptimisticLockingFailureException) {
-            throw IllegalStateException("The user was updated by another transaction")
-        }
     }
 
     /**
@@ -127,7 +123,6 @@ class UserService(
      * @return the [UserInfoDTO] of the changed user
      */
     fun changeUserRole(changeUserRoleRequestDTO: ChangeUserRoleRequestDTO): UserInfoDTO {
-        try {
             if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
                 // Cannot change user role to INIT
                 throw IllegalArgumentException("Cannot change user role to INIT")
@@ -159,10 +154,6 @@ class UserService(
                     isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
                     status = extractUserStatus(updatedUser),
             )
-
-        } catch (ex: OptimisticLockingFailureException) {
-            throw IllegalStateException("The user was updated by another transaction")
-        }
     }
 
     /**
