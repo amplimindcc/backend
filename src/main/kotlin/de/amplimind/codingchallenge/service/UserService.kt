@@ -217,19 +217,12 @@ class UserService(
         }
 
         val newUser =
-            if (inviteRequest.isAdmin){
-                User(
-                    email = inviteRequest.email,
-                    password = passwordEncoder.encode(createPassword(20)),
-                    role = UserRole.ADMIN,
-                )
-            }else{
-                User(
-                    email = inviteRequest.email,
-                    password = passwordEncoder.encode(createPassword(20)),
-                    role = UserRole.INIT,
-                )
-            }
+            User(
+                email = inviteRequest.email,
+                password = passwordEncoder.encode(createPassword(20)),
+                role = if (inviteRequest.isAdmin) UserRole.ADMIN else UserRole.INIT,
+            )
+
         this.userRepository.save(newUser)
 
         if (!inviteRequest.isAdmin) {
