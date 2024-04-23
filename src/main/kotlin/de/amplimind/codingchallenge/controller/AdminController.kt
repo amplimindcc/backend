@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.zip.ZipOutputStream;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Controller for admin related tasks.
@@ -148,6 +150,26 @@ class AdminController(
             ),
         )
     }
+
+    @Operation(summary = "Download project of user")
+    @ApiResponse(responseCode = "200", description = "Project downloaded successfully")
+    @ApiResponse(responseCode = "404", description = "User project not found")
+    @ApiResponse(responseCode = "422", description = "User not found")
+    @GetMapping("/download/project/{email}")
+    fun downloadUserProject(
+        @PathVariable email: String,
+    ) :ResponseEntity<ByteArray> {
+        return ResponseEntity.ok (
+            val zipFile = ZipOutputStream(ByteArrayOutputStream())
+            try {
+                zipFile.putNextEntry(ZipEntry("project.zip"))
+                zipFile.write(userProject)
+                zipFile.close()
+                return zipFile.toByteArray()
+            }
+        )
+    }
+    
 
     @Operation(summary = "Endpoint for deleting a project.")
     @ApiResponse(responseCode = "200", description = "Project was deleted successfully")
