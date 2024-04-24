@@ -158,7 +158,7 @@ class AdminController(
     fun downloadUserProject(
         @PathVariable email: String,
     ) {
-        // TODO: Implement later
+        // TODO Wait until upload is done
     }
 
     @Operation(summary = "Endpoint for deleting a project.")
@@ -169,5 +169,18 @@ class AdminController(
         @PathVariable projectId: Long,
     ) {
         projectService.deleteProject(projectId)
+    }
+
+    @Operation(summary = "Endpoint to send user another invite")
+    @ApiResponse(responseCode = "200", description = "Repeated invite successfully.")
+    @ApiResponse(responseCode = "404", description = "User does not exist")
+    @ApiResponse(responseCode = "409", description = "User is already registered and does not need a reinvite")
+    @ApiResponse(responseCode = "422", description = "Email supplied was not an actual email")
+    @PostMapping("/resend/invite")
+    fun resendInvite(
+        @RequestBody inviteRequest: InviteRequestDTO,
+    ): ResponseEntity<UserInfoDTO> {
+        ValidationUtils.validateEmail(inviteRequest.email)
+        return ResponseEntity.ok(userService.handleResendInvite(inviteRequest))
     }
 }
