@@ -34,7 +34,7 @@ class AccountController(
     @ApiResponse(responseCode = "200", description = "Password has been changed successfully")
     @ApiResponse(responseCode = "409", description = "Token has already been used")
     @ApiResponse(responseCode = "422", description = "Token is not valid")
-    @PostMapping("change-password/")
+    @PostMapping("change-password")
     fun changePassword(
         @RequestBody changePasswordRequestDTO: ChangePasswordRequestDTO,
     ): ResponseEntity<Unit> {

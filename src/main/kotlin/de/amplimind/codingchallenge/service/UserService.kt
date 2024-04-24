@@ -60,7 +60,7 @@ class UserService(
         private const val RESET_PASSWORD_TEXT =
             "You have requested to reset your password for your Amplimind Coding Challenge account." +
                 " Please follow the link below to set up a new password:"
-        private const val RESET_LINK_PREFIX = "http://localhost:5174/reset-password/"
+        private const val RESET_LINK_PREFIX = "http://localhost:5173/reset-password/"
     }
 
     private val checkResetPasswordLock = Any()

@@ -35,7 +35,7 @@ class EmailService(private val mailsender: JavaMailSender) {
         message.subject = "test"
         // TODO: change localhost to Constant with actual Servername
         message.text = "You have ${JWTUtils.INVITE_LINK_EXPIRATION_DAYS} Days to start your Coding Challenge. " +
-            "After 5 Days the link below will expire http://localhost:5174/invite/$token"
+            "After 5 Days the link below will expire http://localhost:5173/invite/$token"
         mailsender.send(message)
     }
 
