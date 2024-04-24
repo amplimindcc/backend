@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
+import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserProjectDTO
@@ -24,8 +25,6 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.util.zip.ZipOutputStream;
-import java.io.ByteArrayOutputStream;
 
 /**
  * Controller for admin related tasks.
@@ -76,7 +75,7 @@ class AdminController(
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
         @PathVariable email: String,
-    ): ResponseEntity<UserInfoDTO> {
+    ): ResponseEntity<DeletedUserInfoDTO> {
         ValidationUtils.validateEmail(email)
         val userInfo = this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok(userInfo)
@@ -161,7 +160,6 @@ class AdminController(
     ) {
         // TODO: Implement later
     }
-    
 
     @Operation(summary = "Endpoint for deleting a project.")
     @ApiResponse(responseCode = "200", description = "Project was deleted successfully")

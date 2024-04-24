@@ -21,5 +21,5 @@ class Project(
     val description: String,
     var active: Boolean,
     @Version
-    var version: Long = 0
+    var version: Long = 0,
 )

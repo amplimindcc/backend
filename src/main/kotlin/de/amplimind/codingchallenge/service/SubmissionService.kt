@@ -7,7 +7,6 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
 
 /**
@@ -23,35 +22,35 @@ class SubmissionService(
      * @return the [SubmissionInfoDTO] of the updated submission
      */
     fun changeSubmissionStateReviewed(email: String): SubmissionInfoDTO {
-            val submission =
-                    this.submissionRepository.findByUserEmail(email)
-                            ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")
+        val submission =
+            this.submissionRepository.findByUserEmail(email)
+                ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")
 
-            if (submission.status.matchesAny(SubmissionStates.SUBMITTED).not()) {
-                // Submission has to be submitted
-                throw IllegalStateException("Submission is in state ${submission.status} and can not be changed reviewed.")
+        if (submission.status.matchesAny(SubmissionStates.SUBMITTED).not()) {
+            // Submission has to be submitted
+            throw IllegalStateException("Submission is in state ${submission.status} and can not be changed reviewed.")
+        }
+
+        val updatedSubmission =
+            submission.let {
+                Submission(
+                    userEmail = it.userEmail,
+                    status = SubmissionStates.REVIEWED,
+                    turnInDate = it.turnInDate,
+                    projectID = it.projectID,
+                    expirationDate = it.expirationDate,
+                )
             }
 
-            val updatedSubmission =
-                    submission.let {
-                        Submission(
-                                userEmail = it.userEmail,
-                                status = SubmissionStates.REVIEWED,
-                                turnInDate = it.turnInDate,
-                                projectID = it.projectID,
-                                expirationDate = it.expirationDate,
-                        )
-                    }
+        this.submissionRepository.save(updatedSubmission)
 
-            this.submissionRepository.save(updatedSubmission)
-
-            return updatedSubmission.toSumbissionInfoDTO()
+        return updatedSubmission.toSumbissionInfoDTO()
     }
 
     fun getProjectIdOfUser(email: String): Long {
-            val submission =
-                    this.submissionRepository.findByUserEmail(email)
-                            ?: throw ResourceNotFoundException("Submission for user with email $email was not found.")
-            return submission.projectID
+        val submission =
+            this.submissionRepository.findByUserEmail(email)
+                ?: throw ResourceNotFoundException("Submission for user with email $email was not found.")
+        return submission.projectID
     }
 }
