@@ -7,6 +7,7 @@ import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.HttpStatus
@@ -71,6 +72,11 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenAlreadyUsedException::class)
     fun handleTokenAlreadyUsedException(ex: TokenAlreadyUsedException): ResponseEntity<String> {
+        return ResponseEntity(ex.message, HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(UserAlreadyRegisteredException::class)
+    fun handleUserAlreadyRegisteredException(ex: UserAlreadyRegisteredException): ResponseEntity<String> {
         return ResponseEntity(ex.message, HttpStatus.CONFLICT)
     }
 }

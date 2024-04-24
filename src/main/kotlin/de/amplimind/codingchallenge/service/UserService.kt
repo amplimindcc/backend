@@ -12,6 +12,7 @@ import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
@@ -364,5 +365,27 @@ class UserService(
      */
     fun fetchLoggedInUserAdminStatus(): IsAdminDTO {
         return IsAdminDTO(fetchUserInfosForEmail(UserUtils.fetchLoggedInUser().username).isAdmin)
+    }
+
+    /**
+     * handles the entire behaviour of the repeat send invite
+     * @param inviteRequest the repeat invite request
+     */
+    fun handleResendInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
+        val user: User =
+            userRepository.findByEmail(inviteRequest.email)
+                ?: throw ResourceNotFoundException("User with email ${inviteRequest.email} was not found")
+
+        if (extractUserStatus(user) != UserStatus.UNREGISTERED) {
+            throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
+        }
+
+        emailService.sendEmail(inviteRequest)
+
+        return UserInfoDTO(
+            inviteRequest.email,
+            inviteRequest.isAdmin,
+            extractUserStatus(user),
+        )
     }
 }
