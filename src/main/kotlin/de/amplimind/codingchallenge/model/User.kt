@@ -18,7 +18,7 @@ class User(
     @Enumerated(EnumType.STRING)
     val role: UserRole,
     @Version
-    var version: Long? = null
+    var version: Long? = null,
 ) : UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return listOf("ROLE_${role.name}").map { GrantedAuthority { it } }.toMutableList()

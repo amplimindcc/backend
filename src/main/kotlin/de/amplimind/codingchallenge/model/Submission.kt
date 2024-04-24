@@ -20,5 +20,5 @@ class Submission(
     val turnInDate: Timestamp,
     var status: SubmissionStates,
     @Version
-    var version: Long? = null
+    var version: Long? = null,
 )

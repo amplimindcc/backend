@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
 import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
@@ -25,7 +26,6 @@ import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
-import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -94,29 +94,29 @@ class UserService(
      * @param email the email of the user to delete
      * @return the [UserInfoDTO] of the deleted user
      */
-    fun deleteUserByEmail(email: String): UserInfoDTO {
-            // Check if the user is trying to delete himself
-            val auth = SecurityContextHolder.getContext().authentication
-            val authenticatedUserEmail = auth?.name
-            if (authenticatedUserEmail == email) {
-                throw UserSelfDeleteException("User with email $email cannot delete himself")
-            }
+    fun deleteUserByEmail(email: String): DeletedUserInfoDTO {
+        // Check if the user is trying to delete himself
+        val auth = SecurityContextHolder.getContext().authentication
+        val authenticatedUserEmail = auth?.name
+        if (authenticatedUserEmail == email) {
+            throw UserSelfDeleteException("User with email $email cannot delete himself")
+        }
 
-            // Delete the submissions of the user
-            val submissions = this.submissionRepository.findByUserEmail(email)
-            if (submissions != null) {
-                this.submissionRepository.delete(submissions)
-            }
+        // Delete the submissions of the user
+        val submissions = this.submissionRepository.findByUserEmail(email)
+        if (submissions != null) {
+            this.submissionRepository.delete(submissions)
+        }
 
-            // Find the user & delete the user
-            val user = this.userRepository.findByEmail(email)
-                    ?: throw ResourceNotFoundException("User with email $email was not found")
-            this.userRepository.delete(user)
-            return UserInfoDTO(
-                    email = user.email,
-                    isAdmin = user.role.matchesAny(UserRole.ADMIN),
-                    status = UserStatus.DELETED,
-            )
+        // Find the user & delete the user
+        val user =
+            this.userRepository.findByEmail(email)
+                ?: throw ResourceNotFoundException("User with email $email was not found")
+        this.userRepository.delete(user)
+        return DeletedUserInfoDTO(
+            email = user.email,
+            isAdmin = user.role.matchesAny(UserRole.ADMIN),
+        )
     }
 
     /**
@@ -125,41 +125,41 @@ class UserService(
      * @return the [UserInfoDTO] of the changed user
      */
     fun changeUserRole(changeUserRoleRequestDTO: ChangeUserRoleRequestDTO): UserInfoDTO {
-            if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
-                // Cannot change user role to INIT
-                throw IllegalArgumentException("Cannot change user role to INIT")
+        if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
+            // Cannot change user role to INIT
+            throw IllegalArgumentException("Cannot change user role to INIT")
+        }
+
+        val user = UserUtils.fetchLoggedInUser()
+
+        if (user.username == changeUserRoleRequestDTO.email) {
+            throw IllegalArgumentException("Cannot change own role")
+        }
+
+        val foundUser =
+            this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
+                ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
+
+        val updatedUser =
+            foundUser.let {
+                User(
+                    email = it.email,
+                    password = it.password,
+                    role = changeUserRoleRequestDTO.newRole,
+                )
             }
+        // save the updated user
+        this.userRepository.save(updatedUser)
 
-            val user = UserUtils.fetchLoggedInUser()
-
-            if (user.username == changeUserRoleRequestDTO.email) {
-                throw IllegalArgumentException("Cannot change own role")
-            }
-
-            val foundUser =
-                    this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
-                            ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
-
-            val updatedUser =
-                    foundUser.let {
-                        User(
-                                email = it.email,
-                                password = it.password,
-                                role = changeUserRoleRequestDTO.newRole,
-                        )
-                    }
-            // save the updated user
-            this.userRepository.save(updatedUser)
-
-            return UserInfoDTO(
-                    email = updatedUser.email,
-                    isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
-                    status = extractUserStatus(updatedUser),
-            )
+        return UserInfoDTO(
+            email = updatedUser.email,
+            isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
+            status = extractUserStatus(updatedUser),
+        )
     }
 
     /**
-     * overrride random password with password set by user
+     * override random password with password set by user
      * @param registerRequest
      */
 
@@ -196,13 +196,16 @@ class UserService(
      * handle the Invite of a new applicant
      * @param email The email of the applicant which should be created and where the email should be sent to
      */
+    @Transactional
     fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user = createUser(inviteRequest)
         emailService.sendEmail(inviteRequest)
+
+        // User should be unregistered at this point since he has not registered yet
         return UserInfoDTO(
             email = user.email,
             isAdmin = inviteRequest.isAdmin,
-            status = if (inviteRequest.isAdmin) UserStatus.UNREGISTERED else extractUserStatus(user),
+            status = UserStatus.UNREGISTERED,
         )
     }
 
@@ -216,14 +219,15 @@ class UserService(
             this.userRepository.findByEmail(inviteRequest.email)
 
         if (foundUser != null) {
-            throw UserAlreadyExistsException("User with email $inviteRequest.email already exists")
+            // User should not exists at this point
+            throw UserAlreadyExistsException("User with email ${inviteRequest.email} already exists")
         }
 
         val newUser =
             User(
                 email = inviteRequest.email,
                 password = passwordEncoder.encode(createPassword(20)),
-                role = if (inviteRequest.isAdmin) UserRole.ADMIN else UserRole.INIT,
+                role = UserRole.INIT,
             )
 
         this.userRepository.save(newUser)
@@ -293,64 +297,7 @@ class UserService(
      * @param user the user to extract the status from
      * @return the [UserStatus]
      */
-    private fun extractUserStatus(user: User): UserStatus {
-        // TODO we might have to change this method
-        if (user.role.matchesAny(UserRole.ADMIN)) {
-            // An admin should not submit anything
-            return UserStatus.REGISTERED
-        }
-
-        if (user.role.matchesAny(UserRole.INIT)) {
-            return UserStatus.UNREGISTERED
-        }
-
-        // The user should have a submission if its not the admin
-        val submission =
-            this.submissionRepository.findByUserEmail(user.email) ?: return UserStatus.REGISTERED
-
-        if (hasUserCompletedSubmission(submission)) {
-            return UserStatus.SUBMITTED
-        }
-
-        if (isUserAlreadyImplementing(submission)) {
-            return UserStatus.IMPLEMENTING
-        }
-
-        if (hasUserStartedImplementing(submission).not() || isUserRegistered(user)) {
-            // User did not start implementing the submission
-            return UserStatus.REGISTERED
-        }
-
-        // This should never happen
-        throw IllegalStateException("The userstatus does not match any criteria")
-    }
-
-    /**
-     * Checks if the user has completed the submission.
-     * @param submission the submission to check
-     * @return true if the user has completed the submission
-     */
-    private fun hasUserCompletedSubmission(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.SUBMITTED)
-    }
-
-    /**
-     * Checks if the user is already implementing the submission.
-     * @param submission the submission to check
-     * @return true if the user is already implementing the submission
-     */
-    private fun isUserAlreadyImplementing(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.IN_IMPLEMENTATION)
-    }
-
-    /**
-     * Checks if the user has started implementing the submission.
-     * @param submission the submission to check
-     * @return true if the user has started implementing the submission
-     */
-    private fun hasUserStartedImplementing(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.INIT).not()
-    }
+    private fun extractUserStatus(user: User) = if (isUserRegistered(user)) UserStatus.REGISTERED else UserStatus.UNREGISTERED
 
     /**
      * Checks if the user is registered (not init anymore)
