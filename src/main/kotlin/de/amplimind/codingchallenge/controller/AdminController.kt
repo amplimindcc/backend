@@ -158,16 +158,8 @@ class AdminController(
     @GetMapping("/download/project/{email}")
     fun downloadUserProject(
         @PathVariable email: String,
-    ) :ResponseEntity<ByteArray> {
-        return ResponseEntity.ok (
-            val zipFile = ZipOutputStream(ByteArrayOutputStream())
-            try {
-                zipFile.putNextEntry(ZipEntry("project.zip"))
-                zipFile.write(userProject)
-                zipFile.close()
-                return zipFile.toByteArray()
-            }
-        )
+    ) {
+        // TODO: Implement later
     }
     
 
