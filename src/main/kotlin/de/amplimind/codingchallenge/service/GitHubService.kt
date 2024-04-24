@@ -9,9 +9,13 @@ import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.*
 import de.amplimind.codingchallenge.utils.ZipUtils
 import kotlinx.coroutines.*
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import retrofit2.Call
+import retrofit2.Response
 import java.io.File
 import java.util.*
 
@@ -28,7 +32,11 @@ class GitHubService (
      * @param repoName the email of the user who made the submission
      */
     // TODO: optimize requests
-    fun pushToRepo(apiClient: GitHubApiClient, submitSolutionRequestDTO: SubmitSolutionRequestDTO, repoName: String) {
+    suspend fun pushToRepo(apiClient: GitHubApiClient, submitSolutionRequestDTO: SubmitSolutionRequestDTO, repoName: String) = coroutineScope {
+//        val reqCode = async { pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName) }
+//        val reqWorkflow= async { pushWorkflow(apiClient, repoName) }
+//        val reqReadme= async { pushReadme(apiClient, submitSolutionRequestDTO.description, repoName) }
+//        return@coroutineScope awaitAll(reqCode, reqWorkflow, reqReadme)
         pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName)
         pushWorkflow(apiClient, repoName)
         pushReadme(apiClient, submitSolutionRequestDTO.description, repoName)
@@ -39,11 +47,13 @@ class GitHubService (
      * @param apiClient the client for GitHub api alls
      * @param repoName the owner and name of the repo
      */
-    fun createRepo(apiClient: GitHubApiClient, repoName: String) {
+    suspend fun createRepo(apiClient: GitHubApiClient, repoName: String): Deferred<ResponseBody> = coroutineScope {
         val organisation = "amplimindcc"
         val description = "This is the submission repository of $repoName"
         val submissionRepository = SubmissionGitHubRepository(repoName, description)
-        apiClient.createSubmissionRepository(organisation, submissionRepository).execute()
+        val req: Deferred<ResponseBody> = async { apiClient.createSubmissionRepository(organisation, submissionRepository) }
+        req.await()
+        return@coroutineScope req
     }
 
     /**
@@ -52,13 +62,18 @@ class GitHubService (
      * @param multipartFile the code to push
      * @param repoName the owner and name of the repo
      */
-    fun pushCode(apiClient: GitHubApiClient, multipartFile: MultipartFile, repoName: String) {
+    suspend fun pushCode(apiClient: GitHubApiClient, multipartFile: MultipartFile, repoName: String): Deferred<List<ResponseBody>> = coroutineScope {
+        logger.info("pushCode")
+        val req = async {
             ZipUtils.unzipCode(multipartFile).map { entry ->
                 val filePath = entry.key.substringAfter("/")
                 val fileContent = entry.value
                 val submissionFileCode = SubmissionFile("committed by kotlin backend", fileContent)
-                apiClient.pushFileCall(repoName, filePath, submissionFileCode).execute()
+                apiClient.pushFileCall(repoName, filePath, submissionFileCode)
             }
+        }
+        req.await()
+        return@coroutineScope req
     }
 
     /**
@@ -66,13 +81,16 @@ class GitHubService (
      * @param apiClient the client for GitHub api alls
      * @param repoName the owner and name of the repo
      */
-    fun pushWorkflow(apiClient: GitHubApiClient, repoName: String) {
+    suspend fun pushWorkflow(apiClient: GitHubApiClient, repoName: String): Deferred<ResponseBody> = coroutineScope {
+        logger.info("pushWorkflow")
         val workflowPath = ".github/workflows/lint.yml"
         val file = File(this::class.java.classLoader.getResource("workflows/lint.yml").file)
         val byteArray = file.readBytes() // Read file contents as byte array
         val workflowContent = Base64.getEncoder().encodeToString(byteArray)
         val submissionFileWorkflow = SubmissionFile("committed by kotlin backend", workflowContent)
-        apiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow).execute()
+        val req: Deferred<ResponseBody> = async { apiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
+        req.await()
+        return@coroutineScope req
     }
 
     /**
@@ -81,11 +99,14 @@ class GitHubService (
      * @param description the description the user sent
      * @param repoName the owner and name of the repo
      */
-    fun pushReadme(apiClient: GitHubApiClient, description: String, repoName: String) {
+    suspend fun pushReadme(apiClient: GitHubApiClient, description: String, repoName: String): Deferred<ResponseBody> = coroutineScope {
+        logger.info("pushReadme")
         val readmePath = "README.md"
         val readmeContent = Base64.getEncoder().encodeToString(description.toByteArray())
         val submissionFileReadme = SubmissionFile("committed by kotlin backend", readmeContent)
-        apiClient.pushFileCall(repoName, readmePath, submissionFileReadme).execute()
+        val req: Deferred<ResponseBody> = async { apiClient.pushFileCall(repoName, readmePath, submissionFileReadme) }
+        req.await()
+        return@coroutineScope req
     }
 
     /**
@@ -93,11 +114,13 @@ class GitHubService (
      * @param apiClient the client for GitHub api alls
      * @param repoName the owner and name of the repo
      */
-    fun triggerWorkflow(apiClient: GitHubApiClient, repoName: String) {
+    suspend fun triggerWorkflow(apiClient: GitHubApiClient, repoName: String): Deferred<Response<String>> = coroutineScope {
         val workflowName = "lint.yml"
         val branch = "main"
         val workflowDispatch = WorkflowDispatch(branch)
-        apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch).execute()
+        val req: Deferred<Response<String>> = async { apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch) }
+        req.await()
+        return@coroutineScope req
     }
 
     /**

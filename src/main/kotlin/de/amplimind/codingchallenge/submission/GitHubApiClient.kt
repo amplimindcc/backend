@@ -1,33 +1,38 @@
 package de.amplimind.codingchallenge.submission
 
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.Call
 import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 
 interface GitHubApiClient {
     @PUT("repos/amplimindcc/{repoName}/contents/{filePath}")
-    fun pushFileCall(
+    suspend fun pushFileCall(
         @Path("repoName") repoName: String,
         @Path("filePath") filePath: String,
         @Body submissionFile: SubmissionFile
-    ): Call<Result<String>>
+    ): ResponseBody
 
     @POST("orgs/{org}/repos")
-    fun createSubmissionRepository(
+    suspend fun createSubmissionRepository(
         @Path("org") org: String,
         @Body submissionRepository: SubmissionGitHubRepository
-    ): Call<Result<String>>
+    ): ResponseBody
 
     @POST("repos/amplimindcc/{repoName}/actions/workflows/{workflowName}/dispatches")
-    fun triggerWorkflow(
+    suspend fun triggerWorkflow(
         @Path("repoName") repoName: String,
         @Path("workflowName") workflowName: String,
         @Body workflowDispatch: WorkflowDispatch
-    ): Call<Result<String>>
+    ): Response<String>
 
     @GET("repos/amplimindcc/{repoName}")
     fun getSubmissionRepository(
@@ -70,6 +75,8 @@ fun createGitHubApiClient(accessToken: String): GitHubApiClient {
     val retrofit = Retrofit.Builder()
         .baseUrl("https://api.github.com/")
         .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(Json { ignoreUnknownKeys = true }.asConverterFactory(contentType))
+        .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
         .client(httpClient)
         .build()
     return retrofit.create(GitHubApiClient::class.java)
