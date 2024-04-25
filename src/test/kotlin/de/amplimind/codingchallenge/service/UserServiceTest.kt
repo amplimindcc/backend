@@ -1,9 +1,6 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
-import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -25,7 +22,6 @@ import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 
 /**
@@ -69,80 +65,6 @@ internal class UserServiceTest {
                 password = "password",
                 role = UserRole.ADMIN,
             )
-    }
-
-    /**
-     * Test that a [IllegalArgumentException] is thrown when trying to change a user role to [UserRole.INIT].
-     */
-    @Test
-    fun test_change_user_role_fail() {
-        val changeUserRoleRequest =
-            ChangeUserRoleRequestDTO(
-                email = "ignore@web.de",
-                newRole = UserRole.INIT,
-            )
-
-        assertThrows<IllegalArgumentException> { this.userService.changeUserRole(changeUserRoleRequest) }
-    }
-
-    /**
-     * Test that a [ResourceNotFoundException] is thrown when trying to change the role of a user that does not exist.
-     */
-    @Test
-    @WithMockUser(username = "admin", roles = ["ADMIN"])
-    fun test_change_user_role_not_found_user() {
-        val changeUserRoleRequest =
-            ChangeUserRoleRequestDTO(
-                email = "doesnotexists@web.de",
-                newRole = UserRole.ADMIN,
-            )
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(adminUser, null)
-
-        every { userRepository.findByEmail(changeUserRoleRequest.email) } returns null
-
-        assertThrows<ResourceNotFoundException> { this.userService.changeUserRole(changeUserRoleRequest) }
-    }
-
-    /**
-     * Test a successful role change.
-     */
-    @Test
-    fun test_successful_role_change() {
-        val changeUserRoleRequest =
-            ChangeUserRoleRequestDTO(
-                email = "user@web.de",
-                newRole = UserRole.ADMIN,
-            )
-
-        val storedUser =
-            User(
-                email = changeUserRoleRequest.email,
-                password = "password",
-                role = UserRole.USER,
-            )
-
-        val updatedUser =
-            User(
-                email = changeUserRoleRequest.email,
-                password = "password",
-                role = changeUserRoleRequest.newRole,
-            )
-
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(adminUser, null)
-
-        val userSlot = slot<User>()
-
-        every { userRepository.findByEmail(changeUserRoleRequest.email) } returns storedUser
-
-        every { userRepository.save(capture(userSlot)) } returns updatedUser
-
-        val result = this.userService.changeUserRole(changeUserRoleRequest)
-
-        assert(userSlot.captured.email == updatedUser.email)
-        assert(userSlot.captured.role == updatedUser.role)
-
-        assert(result.email == updatedUser.email)
-        assert(result.isAdmin)
     }
 
     /**

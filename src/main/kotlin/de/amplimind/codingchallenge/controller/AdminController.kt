@@ -9,6 +9,7 @@ import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequest
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
+import de.amplimind.codingchallenge.service.InviteTokenExpirationService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.service.UserService
@@ -27,6 +28,7 @@ class AdminController(
     private val projectService: ProjectService,
     private val userService: UserService,
     private val submissionService: SubmissionService,
+    private val inviteTokenExpirationService: InviteTokenExpirationService,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
@@ -162,5 +164,16 @@ class AdminController(
     ): ResponseEntity<UserInfoDTO> {
         ValidationUtils.validateEmail(inviteRequest.email)
         return ResponseEntity.ok(userService.handleResendInvite(inviteRequest))
+    }
+
+    @Operation(summary = "Fetches the expiration time (dd.mm.yyyy hh:mm) for a invite link for the provided email of a user")
+    @ApiResponse(responseCode = "200", description = "Expiration fetched successfully")
+    @ApiResponse(responseCode = "404", description = "There is no expiration date for the provided email")
+    @GetMapping("invite/expiration/{email}")
+    fun fetchExpirationForInvite(
+        @PathVariable email: String,
+    ): ResponseEntity<String> {
+        val expirationDate = inviteTokenExpirationService.fetchExpirationDateForUser(email)
+        return ResponseEntity.ok(expirationDate)
     }
 }

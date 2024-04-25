@@ -83,7 +83,7 @@ class AuthController(
     @GetMapping("/check-token/{token}")
     fun checkTokenValidity(
         @PathVariable token: String,
-    ): ResponseEntity<String>  {
+    ): ResponseEntity<String> {
         JWTUtils.validateToken(token)
         return ResponseEntity.ok("Token is valid")
     }

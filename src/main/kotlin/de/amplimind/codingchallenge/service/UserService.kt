@@ -1,13 +1,21 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.constants.AppConstants
+import de.amplimind.codingchallenge.constants.MessageConstants
 import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
 import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
+import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.*
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -18,9 +26,11 @@ import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
+import de.amplimind.codingchallenge.utils.JWTUtils.INVITE_LINK_EXPIRATION_DAYS
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -48,6 +58,7 @@ class UserService(
     private val emailService: EmailService,
     private val authenticationProvider: AuthenticationProvider,
     private val resetPasswordTokenStorage: ResetPasswordTokenStorage,
+    private val inviteTokenExpirationService: InviteTokenExpirationService,
 ) {
     companion object {
         private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
@@ -56,6 +67,10 @@ class UserService(
                 " Please follow the link below to set up a new password:"
         private const val RESET_LINK_PREFIX = "http://localhost:5173/reset-password/"
     }
+
+    // TODO fix server variable.
+    @Value("\${app.frontend.url}")
+    val SERVER_URL: String = "null"
 
     private val checkResetPasswordLock = Any()
 
@@ -108,6 +123,7 @@ class UserService(
             this.userRepository.findByEmail(email)
                 ?: throw ResourceNotFoundException("User with email $email was not found")
         this.userRepository.delete(user)
+        this.inviteTokenExpirationService.deleteEntryForUser(email)
         return DeletedUserInfoDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
@@ -118,7 +134,7 @@ class UserService(
      * override random password with password set by user
      * @param registerRequest
      */
-
+    @Transactional
     fun handleRegister(
         registerRequest: RegisterRequestDTO,
         session: HttpSession,
@@ -135,6 +151,9 @@ class UserService(
         }
 
         setPassword(email, registerRequest.password, isAdmin)
+
+        // Remove the token from the repository
+        this.inviteTokenExpirationService.deleteEntryForUser(email)
 
         val authentication: Authentication =
             authenticationProvider.authenticate(
@@ -155,8 +174,8 @@ class UserService(
     @Transactional
     fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user = createUser(inviteRequest)
-        if(inviteRequest.isAdmin as Boolean)  emailService.sendAdminEmail(inviteRequest.email) else emailService.sendUserEmail(inviteRequest.email)
 
+        sendInviteText(inviteRequest)
 
         // User should be unregistered at this point since he has not registered yet
         return UserInfoDTO(
@@ -327,6 +346,7 @@ class UserService(
      * handles the entire behaviour of the repeat send invite
      * @param inviteRequest the repeat invite request
      */
+    @Transactional
     fun handleResendInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user: User =
             userRepository.findByEmail(inviteRequest.email)
@@ -336,12 +356,59 @@ class UserService(
             throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
         }
 
-        if(inviteRequest.isAdmin)  emailService.sendAdminEmail(inviteRequest.email) else emailService.sendUserEmail(inviteRequest.email)
+        sendInviteText(inviteRequest)
 
         return UserInfoDTO(
             inviteRequest.email,
             inviteRequest.isAdmin,
             extractUserStatus(user),
         )
+    }
+
+    private fun fetchInviteSubject(isAdmin: Boolean): String {
+        return if (isAdmin) MessageConstants.ADMIN_SUBJECT else MessageConstants.USER_SUBJECT
+    }
+
+    private fun sendInviteText(inviteRequest: InviteRequestDTO) {
+        val claims = mapOf(JWTUtils.MAIL_KEY to inviteRequest.email, JWTUtils.ADMIN_KEY to inviteRequest.isAdmin)
+
+        val expiration = Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS))
+        val token =
+            JWTUtils.createToken(claims, expiration)
+
+        val subject = fetchInviteSubject(inviteRequest.isAdmin)
+        val text = fetchInviteText(token, inviteRequest.isAdmin)
+
+        this.inviteTokenExpirationService.updateExpirationToken(inviteRequest.email, expiration.time)
+
+        this.emailService.sendEmail(inviteRequest.email, subject, text)
+    }
+
+    private fun fetchInviteText(
+        token: String,
+        isAdmin: Boolean,
+    ): String {
+        if (isAdmin) {
+            return "<p>Hallo,<br>" +
+                "<br>" +
+                "Mit dem unten stehenden Link können sie sich als Admin auf der coding challange Plattform von Amplimind registrieren.<br>" +
+                "<br>" +
+                "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
+                "<br>" +
+                "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b>" +
+                MessageConstants.EMAIL_SIGNATURE +
+                "</p>"
+        }
+
+        return "<p>Sehr geehrter Bewerber,<br>" +
+            "<br>" +
+            "wir laden Sie hiermit zu ihrer Coding Challange ein.<br>" +
+            "Mit dem unten stehenden Link können Sie sich auf unserer Plattform registrieren.<br>" +
+            "<br>" +
+            "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
+            "<br>" +
+            "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b> Nachdem Sie sich registriert haben,<br> können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> Zeit ihre Lösung hochzuladen.<br>" +
+            MessageConstants.EMAIL_SIGNATURE +
+            "</p>"
     }
 }
