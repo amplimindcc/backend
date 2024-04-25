@@ -1,9 +1,9 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.utils.EmailUtils
 import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.JWTUtils.INVITE_LINK_EXPIRATION_DAYS
 import jakarta.mail.internet.MimeMessage
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -16,13 +16,9 @@ import java.util.*
  */
 @Service
 class EmailService(private val mailsender: JavaMailSender) {
-    // TODO remove this method and use the different send mail method
+
+    // TODO move to own configfile
     val SUBMISSION_EXPIRATION_DAYS = 3
-
-    //TODO fix server variable.
-    @Value("\${app.frontend.url}")
-    val SERVER_URL: String? = "null"
-
 
     /**
      * email to the applicant the URL to set the password
@@ -37,32 +33,17 @@ class EmailService(private val mailsender: JavaMailSender) {
                 Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS)),
             )
 
-        val subject = "Invitation to your coding challange"
-        // TODO: change localhost to Constant with actual Servername
+        val subject = EmailUtils.USER_SUBJECT
         val text =
                     "<p>Sehr geehrter Bewerber,<br>" +
                     "<br>" +
                     "wir laden Sie hiermit zu ihrer Coding Challange ein.<br>" +
                     "Mit dem unten stehenden Link können Sie sich auf unserer Plattform registrieren.<br>" +
                     "<br>" +
-                    "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
+                    "<a href=\"${EmailUtils.SERVER_URL}/invite/$token\">Für Coding Challange registrieren</a><br>" +
                     "<br>" +
                     "<b>Der Link läuft nach ${JWTUtils.INVITE_LINK_EXPIRATION_DAYS} Tagen ab.</b> Nachdem Sie sich registriert haben,<br> können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>$SUBMISSION_EXPIRATION_DAYS Tage</b> Zeit ihre Lösung hochzuladen.<br>" +
-                    "<br>" +
-                    "<br>" +
-                    "<br>" +
-                    "Vielen Dank und viele Grüße<br>" +
-                    "Anis<br>" +
-                    "<br>" +
-                    "Anis Rahimic > Managing Director<br>" +
-                    "+49 151 58922570<br>" +
-                    "anis.rahimic@amplimind.io<br>" +
-                    "amplimind.io<br><br>" +
-                    "amplimind GmbH > LabCampus 48 > 85356 München-Flughafen > Germany<br>" +
-                    "powered by Audi and Lufthansa Industry Solutions <br><br>" +
-                    "Sitz/Domicile: München<br>" +
-                    "Registereintrag/Court of Registry: Amtsgericht München HRB 278664<br>" +
-                    "Geschäftsführung/Managing Directors: Anis Rahimic, Bettina Bernhardt<br>" +
+                    EmailUtils.EMAIL_SIGNATURE +
                     "</p>"
         sendEmail(email, subject, text)
     }
@@ -76,31 +57,16 @@ class EmailService(private val mailsender: JavaMailSender) {
                 Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS)),
             )
 
-        val subject = "Invitation for amplimind coding challange platform"
-        // TODO: change localhost to Constant with actual Servername
+        val subject = EmailUtils.ADMIN_SUBJECT
         val text =
             "<p>Hallo,<br>" +
                     "<br>" +
                     "Mit dem unten stehenden Link können sie sich als Admin auf der coding challange Plattform von Amplimind registrieren.<br>" +
                     "<br>" +
-                    "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
+                    "<a href=\"${EmailUtils.SERVER_URL}/invite/$token\">Jetzt registrieren</a><br>" +
                     "<br>" +
                     "<b>Der Link läuft nach ${JWTUtils.INVITE_LINK_EXPIRATION_DAYS} Tagen ab.</b>" +
-                    "<br>" +
-                    "<br>" +
-                    "<br>" +
-                    "Vielen Dank und viele Grüße<br>" +
-                    "Anis<br>" +
-                    "<br>" +
-                    "Anis Rahimic > Managing Director<br>" +
-                    "+49 151 58922570<br>" +
-                    "anis.rahimic@amplimind.io<br>" +
-                    "amplimind.io<br><br>" +
-                    "amplimind GmbH > LabCampus 48 > 85356 München-Flughafen > Germany<br>" +
-                    "powered by Audi and Lufthansa Industry Solutions <br><br>" +
-                    "Sitz/Domicile: München<br>" +
-                    "Registereintrag/Court of Registry: Amtsgericht München HRB 278664<br>" +
-                    "Geschäftsführung/Managing Directors: Anis Rahimic, Bettina Bernhardt<br>" +
+                    EmailUtils.EMAIL_SIGNATURE +
                     "</p>"
 
         sendEmail(email, subject, text)
