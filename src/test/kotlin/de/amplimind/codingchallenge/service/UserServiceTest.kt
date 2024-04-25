@@ -13,13 +13,9 @@ import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
-import io.mockk.MockKAnnotations
-import io.mockk.Runs
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
-import io.mockk.slot
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
@@ -270,7 +266,7 @@ internal class UserServiceTest {
 
         every { userRepository.findByEmail(emailToUse) } returns null
         every { passwordEncoder.encode(any()) } returns "password"
-        every { emailService.sendEmail(any()) } just Runs
+        every { emailService.sendUserEmail(any()) } just Runs
         every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
 
         val response = userService.handleInvite(inviteRequestDTO)
@@ -294,7 +290,7 @@ internal class UserServiceTest {
 
         every { userRepository.findByEmail(emailToUse) } returns User(emailToUse, "password", UserRole.USER)
         every { passwordEncoder.encode(any()) } returns "password"
-        every { emailService.sendEmail(any()) } just Runs
+        every { emailService.sendUserEmail(any()) } just Runs
         every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
 
         assertThrows<UserAlreadyExistsException> { userService.handleInvite(inviteRequestDTO) }

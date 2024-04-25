@@ -6,7 +6,7 @@ import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
 import java.time.Instant
-import java.util.Date
+import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
@@ -16,8 +16,11 @@ import javax.crypto.spec.SecretKeySpec
 object JWTUtils {
     const val MAIL_KEY = "email"
     const val ADMIN_KEY = "admin"
+    // TODO move to own configfile
     const val INVITE_LINK_EXPIRATION_DAYS: Long = 5
     const val RESET_PASSWORD_EXPIRATION_MIN: Long = 30
+
+
 
     private val enc: AeadAlgorithm = Jwts.ENC.A256GCM
     private val key: SecretKey =

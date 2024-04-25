@@ -150,12 +150,13 @@ class UserService(
 
     /**
      * handle the Invite of a new applicant
-     * @param email The email of the applicant which should be created and where the email should be sent to
+     * @param inviteRequest The email of the applicant which should be created and where the email should be sent to and a boolean if user is admin or not
      */
     @Transactional
     fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user = createUser(inviteRequest)
-        emailService.sendEmail(inviteRequest)
+        if(inviteRequest.isAdmin as Boolean)  emailService.sendAdminEmail(inviteRequest.email) else emailService.sendUserEmail(inviteRequest.email)
+
 
         // User should be unregistered at this point since he has not registered yet
         return UserInfoDTO(
@@ -335,7 +336,7 @@ class UserService(
             throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
         }
 
-        emailService.sendEmail(inviteRequest)
+        if(inviteRequest.isAdmin)  emailService.sendAdminEmail(inviteRequest.email) else emailService.sendUserEmail(inviteRequest.email)
 
         return UserInfoDTO(
             inviteRequest.email,
