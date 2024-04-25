@@ -7,7 +7,6 @@ import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserProjectDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.service.ProjectService
@@ -17,14 +16,7 @@ import de.amplimind.codingchallenge.utils.ValidationUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 /**
  * Controller for admin related tasks.
@@ -79,18 +71,6 @@ class AdminController(
         ValidationUtils.validateEmail(email)
         val userInfo = this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok(userInfo)
-    }
-
-    @Operation(summary = "Endpoint for changing the role of a user")
-    @ApiResponse(responseCode = "200", description = "User role was changed successfully.")
-    @ApiResponse(responseCode = "400", description = "If the role change was not successful")
-    @ApiResponse(responseCode = "401", description = "If no authentication is provided.")
-    @ApiResponse(responseCode = "404", description = "User with email was not found.")
-    @PutMapping("change/role")
-    fun changeRole(
-        @RequestBody changeUserRoleRequest: ChangeUserRoleRequestDTO,
-    ): ResponseEntity<UserInfoDTO> {
-        return ResponseEntity.ok(this.userService.changeUserRole(changeUserRoleRequest))
     }
 
     @Operation(summary = "Endpoint for creating User and emailing him the invite")

@@ -5,15 +5,9 @@ import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.InvalidTokenException
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -37,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -117,45 +111,6 @@ class UserService(
         return DeletedUserInfoDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
-        )
-    }
-
-    /**
-     * Changes the role of a user.
-     * @param changeUserRoleRequestDTO the request to change the role of a user
-     * @return the [UserInfoDTO] of the changed user
-     */
-    fun changeUserRole(changeUserRoleRequestDTO: ChangeUserRoleRequestDTO): UserInfoDTO {
-        if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
-            // Cannot change user role to INIT
-            throw IllegalArgumentException("Cannot change user role to INIT")
-        }
-
-        val user = UserUtils.fetchLoggedInUser()
-
-        if (user.username == changeUserRoleRequestDTO.email) {
-            throw IllegalArgumentException("Cannot change own role")
-        }
-
-        val foundUser =
-            this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
-                ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
-
-        val updatedUser =
-            foundUser.let {
-                User(
-                    email = it.email,
-                    password = it.password,
-                    role = changeUserRoleRequestDTO.newRole,
-                )
-            }
-        // save the updated user
-        this.userRepository.save(updatedUser)
-
-        return UserInfoDTO(
-            email = updatedUser.email,
-            isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
-            status = extractUserStatus(updatedUser),
         )
     }
 
