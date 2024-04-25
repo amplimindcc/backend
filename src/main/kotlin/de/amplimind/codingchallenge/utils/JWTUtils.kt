@@ -16,6 +16,7 @@ import javax.crypto.spec.SecretKeySpec
 object JWTUtils {
     const val MAIL_KEY = "email"
     const val ADMIN_KEY = "admin"
+
     // TODO move to own configfile
     const val INVITE_LINK_EXPIRATION_DAYS: Long = 5
     const val RESET_PASSWORD_EXPIRATION_MIN: Long = 30
