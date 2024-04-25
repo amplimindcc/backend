@@ -17,7 +17,6 @@ import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
-import de.amplimind.codingchallenge.service.email.EmailService
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.UserUtils

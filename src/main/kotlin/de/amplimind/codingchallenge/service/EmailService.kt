@@ -1,4 +1,4 @@
-package de.amplimind.codingchallenge.service.email
+package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.JWTUtils.INVITE_LINK_EXPIRATION_DAYS
