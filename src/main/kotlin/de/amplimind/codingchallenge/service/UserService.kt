@@ -8,12 +8,7 @@ import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.InvalidTokenException
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -22,6 +17,7 @@ import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import de.amplimind.codingchallenge.service.email.EmailService
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
 import de.amplimind.codingchallenge.utils.UserUtils
@@ -37,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -195,12 +191,13 @@ class UserService(
 
     /**
      * handle the Invite of a new applicant
-     * @param email The email of the applicant which should be created and where the email should be sent to
+     * @param inviteRequest The email of the applicant which should be created and where the email should be sent to and a boolean if user is admin or not
      */
     @Transactional
     fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user = createUser(inviteRequest)
-        emailService.sendEmail(inviteRequest)
+        if(inviteRequest.isAdmin as Boolean)  emailService.sendAdminEmail(inviteRequest.email) else emailService.sendUserEmail(inviteRequest.email)
+
 
         // User should be unregistered at this point since he has not registered yet
         return UserInfoDTO(
@@ -380,7 +377,7 @@ class UserService(
             throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
         }
 
-        emailService.sendEmail(inviteRequest)
+        if(inviteRequest.isAdmin)  emailService.sendAdminEmail(inviteRequest.email) else emailService.sendUserEmail(inviteRequest.email)
 
         return UserInfoDTO(
             inviteRequest.email,
