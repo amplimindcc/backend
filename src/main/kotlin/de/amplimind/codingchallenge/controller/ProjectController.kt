@@ -24,6 +24,7 @@ class ProjectController(
     @GetMapping("/fetch")
     fun getUserProject(): ResponseEntity<UserProjectDTO> {
         val email: String = UserUtils.fetchLoggedInUser().username
+        this.submissionService.setExpirationIfNotSet(email)
         return ResponseEntity.ok(
             this.projectService.fetchProjectById(
                 this.submissionService.getProjectIdOfUser(email),

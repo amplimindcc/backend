@@ -7,7 +7,6 @@ import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
@@ -38,7 +37,6 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.sql.Timestamp
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -233,9 +231,9 @@ class UserService(
         val newSubmission =
             Submission(
                 userEmail = user.email,
-                expirationDate = Timestamp(0),
+                expirationDate = null,
                 projectID = activeProjectIds[Random.nextInt(activeProjectIds.size)],
-                turnInDate = Timestamp(0),
+                turnInDate = null,
                 status = SubmissionStates.INIT,
             )
         this.submissionRepository.save(newSubmission)
