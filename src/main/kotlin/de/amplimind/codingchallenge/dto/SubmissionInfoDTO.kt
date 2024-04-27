@@ -13,8 +13,8 @@ import java.sql.Timestamp
  */
 data class SubmissionInfoDTO(
     val userEmail: String,
-    val expirationDate: Timestamp,
+    val expirationDate: Timestamp?,
     val projectID: Long,
-    val turnInDate: Timestamp,
+    val turnInDate: Timestamp?,
     var status: SubmissionStates,
 )
