@@ -39,7 +39,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -64,11 +64,11 @@ class UserService(
             "You have requested to reset your password for your Amplimind Coding Challenge account." +
                 " Please follow the link below to set up a new password:"
         private const val RESET_LINK_PREFIX = "http://localhost:5173/reset-password/"
-    }
 
-    // TODO fix server variable.
-    @Value("\${app.frontend.url}")
-    val SERVER_URL: String = "null"
+        // TODO fix server variable.
+        @Value("\${app.frontend.url}")
+        private const val SERVER_URL: String = "null"
+    }
 
     private val checkResetPasswordLock = Any()
 
@@ -261,6 +261,7 @@ class UserService(
             userObject.let {
                 User(
                     email = it.email,
+                    version = it.version,
                     role = userRole,
                     password = passwordEncoder.encode(password),
                 )
@@ -328,6 +329,7 @@ class UserService(
                         email = it.email,
                         role = it.role,
                         password = passwordEncoder.encode(changePasswordRequestDTO.newPassword),
+                        version = it.version,
                     )
                 }
             userRepository.save(updatedUser)
@@ -392,7 +394,8 @@ class UserService(
         if (isAdmin) {
             return "<p>Hallo,<br>" +
                 "<br>" +
-                "Mit dem unten stehenden Link können sie sich als Admin auf der coding challange Plattform von Amplimind registrieren.<br>" +
+                "Mit dem unten stehenden Link können sie sich als Admin auf der coding challange Plattform" +
+                " von Amplimind registrieren.<br>" +
                 "<br>" +
                 "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
                 "<br>" +
@@ -408,7 +411,9 @@ class UserService(
             "<br>" +
             "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
             "<br>" +
-            "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b> Nachdem Sie sich registriert haben,<br> können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> Zeit ihre Lösung hochzuladen.<br>" +
+            "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
+            "können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> " +
+            "Zeit ihre Lösung hochzuladen.<br>" +
             MessageConstants.EMAIL_SIGNATURE +
             "</p>"
     }

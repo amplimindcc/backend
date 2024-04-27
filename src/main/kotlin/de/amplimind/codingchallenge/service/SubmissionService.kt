@@ -20,7 +20,7 @@ class SubmissionService(
     private val submissionRepository: SubmissionRepository,
 ) {
     /**
-     * Changes the submission state to reviewed.
+     * Changes the submission state to 'reviewed'.
      * @param email the email of the user which will be used to find the submission
      * @return the [SubmissionInfoDTO] of the updated submission
      */
@@ -33,21 +33,11 @@ class SubmissionService(
             // Submission has to be submitted
             throw IllegalStateException("Submission is in state ${submission.status} and can not be changed reviewed.")
         }
+        submission.status = SubmissionStates.REVIEWED
 
-        val updatedSubmission =
-            submission.let {
-                Submission(
-                    userEmail = it.userEmail,
-                    status = SubmissionStates.REVIEWED,
-                    turnInDate = it.turnInDate,
-                    projectID = it.projectID,
-                    expirationDate = it.expirationDate,
-                )
-            }
+        this.submissionRepository.save(submission)
 
-        this.submissionRepository.save(updatedSubmission)
-
-        return updatedSubmission.toSumbissionInfoDTO()
+        return submission.toSumbissionInfoDTO()
     }
 
     fun getProjectIdOfUser(email: String): Long {
@@ -62,23 +52,15 @@ class SubmissionService(
      * @param email email of the user
      */
     fun setExpirationIfNotSet(email: String) {
-        val submission: Submission = this.submissionRepository.findByUserEmail(email) ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")
+        val submission: Submission =
+            this.submissionRepository.findByUserEmail(email)
+                ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")
         if (submission.expirationDate != null) {
             return
         }
-        val updatedSubmission =
-            submission.let {
-                Submission(
-                    userEmail = it.userEmail,
-                    status = it.status,
-                    turnInDate = it.turnInDate,
-                    projectID = it.projectID,
-                    id = it.id,
-                    expirationDate = Timestamp.from(Instant.now().plus(DAYS_TILL_DEADLINE, ChronoUnit.DAYS)),
-                    version = it.version,
-                )
-            }
-        this.submissionRepository.save(updatedSubmission)
+
+        submission.expirationDate = Timestamp.from(Instant.now().plus(DAYS_TILL_DEADLINE, ChronoUnit.DAYS))
+        this.submissionRepository.save(submission)
     }
 
     companion object {

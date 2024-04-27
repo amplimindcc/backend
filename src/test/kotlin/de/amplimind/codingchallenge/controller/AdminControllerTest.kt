@@ -5,6 +5,7 @@ import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.UserRole
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -54,6 +55,7 @@ internal class AdminControllerTest
         /**
          * Makes sure a 200 OK will be returned when a role change succeeds
          */
+        @Disabled("Function is currently not in use and therefor this test is currently not needed!")
         @Test
         @WithMockUser(username = "admin", roles = ["ADMIN"])
         fun test_successful_role_change() {

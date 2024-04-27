@@ -54,7 +54,9 @@ class InviteTokenExpirationService(
      * @return the expiration date as a string
      */
     fun fetchExpirationDateForUser(email: String): String {
-        val inviteToken = inviteTokenExpirationRepository.findByEmail(email) ?: throw ResourceNotFoundException("No expiration date found for user with email $email")
+        val inviteToken =
+            inviteTokenExpirationRepository.findByEmail(email)
+                ?: throw ResourceNotFoundException("No expiration date found for user with email $email")
 
         return Instant.ofEpochMilli(inviteToken.expirationInMillis)
             .atZone(ZoneId.systemDefault())

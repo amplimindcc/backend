@@ -1,6 +1,8 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -10,9 +12,12 @@ import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
@@ -49,6 +54,9 @@ internal class UserServiceTest {
 
     @MockK
     private lateinit var resetPasswordTokenStorage: ResetPasswordTokenStorage
+
+    @MockK
+    private lateinit var inviteTokenExpirationService: InviteTokenExpirationService
 
     @InjectMockKs
     private lateinit var userService: UserService
@@ -132,6 +140,7 @@ internal class UserServiceTest {
         every { submissionRepository.findByUserEmail(emailToUse) } returns submission
         every { submissionRepository.delete(submission) } just Runs
         every { userRepository.delete(user) } just Runs
+        every { inviteTokenExpirationService.deleteEntryForUser(any()) } just Runs
 
         val result = userService.deleteUserByEmail(emailToUse)
 
@@ -188,8 +197,9 @@ internal class UserServiceTest {
 
         every { userRepository.findByEmail(emailToUse) } returns null
         every { passwordEncoder.encode(any()) } returns "password"
-        every { emailService.sendUserEmail(any()) } just Runs
+        every { emailService.sendEmail(any(), any(), any()) } just Runs
         every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
+        every { inviteTokenExpirationService.updateExpirationToken(any(), any()) } just Runs
 
         val response = userService.handleInvite(inviteRequestDTO)
 
@@ -212,7 +222,7 @@ internal class UserServiceTest {
 
         every { userRepository.findByEmail(emailToUse) } returns User(emailToUse, "password", UserRole.USER)
         every { passwordEncoder.encode(any()) } returns "password"
-        every { emailService.sendUserEmail(any()) } just Runs
+        every { emailService.sendEmail(any(), any(), any()) } just Runs
         every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
 
         assertThrows<UserAlreadyExistsException> { userService.handleInvite(inviteRequestDTO) }

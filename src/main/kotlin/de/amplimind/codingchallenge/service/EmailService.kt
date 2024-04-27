@@ -3,13 +3,12 @@ package de.amplimind.codingchallenge.service
 import jakarta.mail.internet.MimeMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
-import java.util.*
 
 /**
  * Service to send emails
  */
 @Service
-class EmailService(private val mailsender: JavaMailSender) {
+class EmailService(private val mailSender: JavaMailSender) {
     /**
      * sends an email to the specified email address
      * @param email the email address to send the email to
@@ -21,10 +20,10 @@ class EmailService(private val mailsender: JavaMailSender) {
         subject: String,
         text: String,
     ) {
-        val message = mailsender.createMimeMessage()
+        val message = mailSender.createMimeMessage()
         message.setRecipients(MimeMessage.RecipientType.TO, email)
         message.subject = subject
         message.setContent(text, "text/html; charset=UTF-8")
-        mailsender.send(message)
+        mailSender.send(message)
     }
 }
