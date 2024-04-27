@@ -2,12 +2,11 @@ package de.amplimind.codingchallenge.utils
 
 import org.springframework.beans.factory.annotation.Value
 
-
 /**
  * Utils object for creating emails
  */
 object EmailUtils {
-    //TODO fix server variable.
+    // TODO fix server variable.
     @Value("\${app.frontend.url}")
     const val SERVER_URL: String = "null"
 
@@ -16,7 +15,7 @@ object EmailUtils {
     const val ADMIN_SUBJECT: String = "Invitation for amplimind coding challange platform"
 
     const val EMAIL_SIGNATURE: String =
-            "<br>" +
+        "<br>" +
             "<br>" +
             "<br>" +
             "Vielen Dank und viele Grüße<br>" +
@@ -31,5 +30,4 @@ object EmailUtils {
             "Sitz/Domicile: München<br>" +
             "Registereintrag/Court of Registry: Amtsgericht München HRB 278664<br>" +
             "Geschäftsführung/Managing Directors: Anis Rahimic, Bettina Bernhardt<br>"
-
 }

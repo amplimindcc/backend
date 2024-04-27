@@ -15,9 +15,9 @@ class Submission(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
     val userEmail: String,
-    val expirationDate: Timestamp,
+    val expirationDate: Timestamp? = null,
     val projectID: Long,
-    val turnInDate: Timestamp,
+    val turnInDate: Timestamp? = null,
     var status: SubmissionStates,
     @Version
     var version: Long? = null,

@@ -8,6 +8,9 @@ import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import org.springframework.stereotype.Service
+import java.sql.Timestamp
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * Service for managing submissions.
@@ -52,5 +55,33 @@ class SubmissionService(
             this.submissionRepository.findByUserEmail(email)
                 ?: throw ResourceNotFoundException("Submission for user with email $email was not found.")
         return submission.projectID
+    }
+
+    /**
+     * sets the expiration date of a submission when the user fetches it for the first time
+     * @param email email of the user
+     */
+    fun setExpirationIfNotSet(email: String) {
+        val submission: Submission = this.submissionRepository.findByUserEmail(email) ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")
+        if (submission.expirationDate != null) {
+            return
+        }
+        val updatedSubmission =
+            submission.let {
+                Submission(
+                    userEmail = it.userEmail,
+                    status = it.status,
+                    turnInDate = it.turnInDate,
+                    projectID = it.projectID,
+                    id = it.id,
+                    expirationDate = Timestamp.from(Instant.now().plus(DAYS_TILL_DEADLINE, ChronoUnit.DAYS)),
+                    version = it.version,
+                )
+            }
+        this.submissionRepository.save(updatedSubmission)
+    }
+
+    companion object {
+        private const val DAYS_TILL_DEADLINE: Long = 3L
     }
 }
