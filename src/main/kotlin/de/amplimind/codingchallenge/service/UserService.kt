@@ -318,6 +318,7 @@ class UserService(
             val email = JWTUtils.getClaimItem(changePasswordRequestDTO.token, JWTUtils.MAIL_KEY) as String
 
             ValidationUtils.validateEmail(email)
+            ValidationUtils.validatePassword(changePasswordRequestDTO.newPassword)
 
             val user = userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
 
