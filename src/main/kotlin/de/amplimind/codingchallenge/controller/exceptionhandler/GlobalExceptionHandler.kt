@@ -1,14 +1,6 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
-import de.amplimind.codingchallenge.exceptions.EmailFormatException
-import de.amplimind.codingchallenge.exceptions.InvalidTokenException
-import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
-import de.amplimind.codingchallenge.exceptions.ProjectInUseException
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -58,6 +50,11 @@ class GlobalExceptionHandler {
     @ExceptionHandler(NoAuthenticationException::class)
     fun handleNoAuthenticationException(ex: NoAuthenticationException): ResponseEntity<String> {
         return ResponseEntity("No authentication: ${ex.message}", HttpStatus.UNAUTHORIZED)
+    }
+
+    @ExceptionHandler(PasswordValidationException::class)
+    fun handlePasswordValidationException(ex: PasswordValidationException): ResponseEntity<String> {
+        return ResponseEntity("Password validation error: ${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
     }
 
     @ExceptionHandler(EmailFormatException::class)

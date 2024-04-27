@@ -257,6 +257,8 @@ class UserService(
 
         val userRole = if (isAdmin) UserRole.ADMIN else UserRole.USER
 
+        ValidationUtils.validatePassword(password)
+
         val updatedUser =
             userObject.let {
                 User(
