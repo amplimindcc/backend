@@ -54,7 +54,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(PasswordValidationException::class)
     fun handlePasswordValidationException(ex: PasswordValidationException): ResponseEntity<String> {
-        return ResponseEntity("Password validation error: ${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
+        return ResponseEntity("Password validation error: ${ex.message}", HttpStatus.PRECONDITION_FAILED)
     }
 
     @ExceptionHandler(EmailFormatException::class)

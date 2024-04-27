@@ -6,6 +6,7 @@ import org.apache.commons.validator.routines.EmailValidator
 
 object ValidationUtils {
     private val EMAIL_VALIDATOR = EmailValidator.getInstance()
+    private val SPECIAL_CHARACTERS = Regex(pattern = "[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]")
 
     /**
      * validates a supplied string to check if it is an actual email address
@@ -32,8 +33,7 @@ object ValidationUtils {
             throw PasswordValidationException("Password must be at least 8 characters long")
         }
 
-        val illegalcharacters = Regex(pattern = "[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]")
-        if(!illegalcharacters.containsMatchIn(password)) {
+        if(!SPECIAL_CHARACTERS.containsMatchIn(password)) {
             throw PasswordValidationException("Password must contain at least one special character")
         }
     }
