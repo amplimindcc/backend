@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.LintResultDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TriggerWorkflowException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
@@ -18,6 +19,7 @@ import retrofit2.Call
 import retrofit2.Response
 import java.io.File
 import java.util.*
+import kotlin.math.log
 
 @Service
 class GitHubService (
@@ -38,8 +40,8 @@ class GitHubService (
 //        val reqReadme= async { pushReadme(apiClient, submitSolutionRequestDTO.description, repoName) }
 //        return@coroutineScope awaitAll(reqCode, reqWorkflow, reqReadme)
         pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName)
-        pushWorkflow(apiClient, repoName)
         pushReadme(apiClient, submitSolutionRequestDTO.description, repoName)
+        pushWorkflow(apiClient, repoName)
     }
 
     /**
@@ -63,7 +65,6 @@ class GitHubService (
      * @param repoName the owner and name of the repo
      */
     suspend fun pushCode(apiClient: GitHubApiClient, multipartFile: MultipartFile, repoName: String): Deferred<List<ResponseBody>> = coroutineScope {
-        logger.info("pushCode")
         val req = async {
             ZipUtils.unzipCode(multipartFile).map { entry ->
                 val filePath = entry.key.substringAfter("/")
@@ -82,7 +83,6 @@ class GitHubService (
      * @param repoName the owner and name of the repo
      */
     suspend fun pushWorkflow(apiClient: GitHubApiClient, repoName: String): Deferred<ResponseBody> = coroutineScope {
-        logger.info("pushWorkflow")
         val workflowPath = ".github/workflows/lint.yml"
         val file = File(this::class.java.classLoader.getResource("workflows/lint.yml").file)
         val byteArray = file.readBytes() // Read file contents as byte array
@@ -100,7 +100,6 @@ class GitHubService (
      * @param repoName the owner and name of the repo
      */
     suspend fun pushReadme(apiClient: GitHubApiClient, description: String, repoName: String): Deferred<ResponseBody> = coroutineScope {
-        logger.info("pushReadme")
         val readmePath = "README.md"
         val readmeContent = Base64.getEncoder().encodeToString(description.toByteArray())
         val submissionFileReadme = SubmissionFile("committed by kotlin backend", readmeContent)
@@ -114,13 +113,20 @@ class GitHubService (
      * @param apiClient the client for GitHub api alls
      * @param repoName the owner and name of the repo
      */
-    suspend fun triggerWorkflow(apiClient: GitHubApiClient, repoName: String): Deferred<Response<String>> = coroutineScope {
+    suspend fun triggerWorkflow(apiClient: GitHubApiClient, repoName: String) = coroutineScope {
+        var maxtries = 20
         val workflowName = "lint.yml"
         val branch = "main"
         val workflowDispatch = WorkflowDispatch(branch)
-        val req: Deferred<Response<String>> = async { apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch) }
-        req.await()
-        return@coroutineScope req
+        var req: Response<Unit> = apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch)
+        while(!req.isSuccessful && maxtries > 0) {
+            req = apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch)
+            maxtries -= 1
+            delay(500)
+        }
+        if(maxtries <= 0) {
+            throw TriggerWorkflowException("Unable to trigger workflow")
+        }
     }
 
     /**

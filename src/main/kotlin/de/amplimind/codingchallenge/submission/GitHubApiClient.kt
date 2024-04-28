@@ -32,7 +32,7 @@ interface GitHubApiClient {
         @Path("repoName") repoName: String,
         @Path("workflowName") workflowName: String,
         @Body workflowDispatch: WorkflowDispatch
-    ): Response<String>
+    ): Response<Unit>
 
     @GET("repos/amplimindcc/{repoName}")
     fun getSubmissionRepository(

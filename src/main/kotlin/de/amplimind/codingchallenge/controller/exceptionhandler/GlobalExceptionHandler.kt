@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.controller.exceptionhandler
 import de.amplimind.codingchallenge.exceptions.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.scheduling.Trigger
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 
@@ -69,5 +70,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(UnzipException::class)
     fun handleUnzipException(ex: UnzipException): ResponseEntity<String> {
         return ResponseEntity("Error whilst unzipping file: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(TriggerWorkflowException::class)
+    fun handleTriggerWorkflowException(ex: TriggerWorkflowException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst triggering workflow: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
     }
 }
