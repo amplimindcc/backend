@@ -1,15 +1,6 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
-import de.amplimind.codingchallenge.exceptions.EmailFormatException
-import de.amplimind.codingchallenge.exceptions.InvalidTokenException
-import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
-import de.amplimind.codingchallenge.exceptions.PasswordValidationException
-import de.amplimind.codingchallenge.exceptions.ProjectInUseException
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -74,6 +65,26 @@ class GlobalExceptionHandler {
     @ExceptionHandler(ProjectInUseException::class)
     fun handleProjectIsUseException(ex: ProjectInUseException): ResponseEntity<String> {
         return ResponseEntity("Error whilst deleting project: ${ex.message}", HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(TooLateSubmissionException::class)
+    fun handleTooLateSubmission(ex: TooLateSubmissionException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(SolutionAlreadySubmittedException::class)
+    fun handleSolutionAlreadySubmittedException(ex: SolutionAlreadySubmittedException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(UnzipException::class)
+    fun handleUnzipException(ex: UnzipException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst unzipping file: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(TriggerWorkflowException::class)
+    fun handleTriggerWorkflowException(ex: TriggerWorkflowException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst triggering workflow: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
     }
 
     @ExceptionHandler(TokenAlreadyUsedException::class)
