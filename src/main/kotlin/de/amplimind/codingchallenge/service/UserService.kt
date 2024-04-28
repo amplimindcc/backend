@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
 import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
+import de.amplimind.codingchallenge.dto.FullUserInfoDTO
 import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
@@ -75,13 +76,26 @@ class UserService(
     /**
      * Fetches all user infos [UserInfoDTO]
      */
-    fun fetchAllUserInfos(): List<UserInfoDTO> {
+    fun fetchAllUserInfos(): List<FullUserInfoDTO> {
         return this.userRepository.findAll().map {
-            UserInfoDTO(
+
+            val userStatus = extractUserStatus(it)
+
+            FullUserInfoDTO(
                 email = it.email,
                 isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                status = extractUserStatus(it),
+                status = userStatus,
+                canBeReinvited = UserStatus.UNREGISTERED == userStatus,
+                inviteTokenExpiration = if(userStatus == UserStatus.UNREGISTERED) fetchExpirationDate(it.email) else ""
             )
+        }
+    }
+
+    private fun fetchExpirationDate(email : String) : String {
+        return try {
+            this.inviteTokenExpirationService.fetchExpirationDateForUser(email)
+        } catch (e: ResourceNotFoundException) {
+            ""
         }
     }
 
