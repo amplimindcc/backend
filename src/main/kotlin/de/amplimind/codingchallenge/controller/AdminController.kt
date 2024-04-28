@@ -2,6 +2,7 @@ package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
 import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
+import de.amplimind.codingchallenge.dto.FullUserInfoDTO
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserProjectDTO
@@ -45,7 +46,7 @@ class AdminController(
     @Operation(summary = "Endpoint for fetching all infos for the users")
     @ApiResponse(responseCode = "200", description = "All user infos were fetched successfully.")
     @GetMapping("fetch/users/all")
-    fun fetchAllUsers(): ResponseEntity<List<UserInfoDTO>> {
+    fun fetchAllUsers(): ResponseEntity<List<FullUserInfoDTO>> {
         return ResponseEntity.ok(this.userService.fetchAllUserInfos())
     }
 
