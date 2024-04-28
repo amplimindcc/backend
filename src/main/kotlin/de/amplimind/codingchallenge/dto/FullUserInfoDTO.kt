@@ -13,5 +13,5 @@ data class FullUserInfoDTO(
     val isAdmin: Boolean,
     val status: UserStatus,
     val canBeReinvited: Boolean,
-    val inviteTokenExpiration: String = ""
+    val inviteTokenExpiration: String = "",
 )
