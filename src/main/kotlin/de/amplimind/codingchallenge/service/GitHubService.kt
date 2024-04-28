@@ -35,10 +35,6 @@ class GitHubService (
      */
     // TODO: optimize requests
     suspend fun pushToRepo(apiClient: GitHubApiClient, submitSolutionRequestDTO: SubmitSolutionRequestDTO, repoName: String) = coroutineScope {
-//        val reqCode = async { pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName) }
-//        val reqWorkflow= async { pushWorkflow(apiClient, repoName) }
-//        val reqReadme= async { pushReadme(apiClient, submitSolutionRequestDTO.description, repoName) }
-//        return@coroutineScope awaitAll(reqCode, reqWorkflow, reqReadme)
         pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName)
         pushReadme(apiClient, submitSolutionRequestDTO.description, repoName)
         pushWorkflow(apiClient, repoName)

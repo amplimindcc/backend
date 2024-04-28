@@ -60,7 +60,6 @@ class SubmissionService(
             if (gitHubService.submissionGitRepositoryExists(gitHubApiClient, repoName)) {
                 throw SolutionAlreadySubmittedException("Submission Repository already exists")
             } else {
-                logger.warn("creating repo")
                 gitHubService.createRepo(gitHubApiClient, repoName)
             }
             gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
