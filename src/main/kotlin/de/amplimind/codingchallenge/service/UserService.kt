@@ -1,13 +1,20 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.constants.AppConstants
+import de.amplimind.codingchallenge.constants.MessageConstants
+import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
+import de.amplimind.codingchallenge.dto.FullUserInfoDTO
+import de.amplimind.codingchallenge.dto.IsAdminDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserStatus
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
+import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
@@ -19,9 +26,11 @@ import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
+import de.amplimind.codingchallenge.utils.JWTUtils.INVITE_LINK_EXPIRATION_DAYS
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -29,10 +38,9 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.sql.Timestamp
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -49,23 +57,45 @@ class UserService(
     private val emailService: EmailService,
     private val authenticationProvider: AuthenticationProvider,
     private val resetPasswordTokenStorage: ResetPasswordTokenStorage,
+    private val inviteTokenExpirationService: InviteTokenExpirationService,
 ) {
     companion object {
         private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
-        private const val RESET_PASSWORD_TEXT = "You have requested to reset your password for your Amplimind Coding Challenge account. Please follow the link below to set up a new password:"
-        private const val RESET_LINK_PREFIX = "http://localhost:5174/reset-password/"
+        private const val RESET_PASSWORD_TEXT =
+            "You have requested to reset your password for your Amplimind Coding Challenge account." +
+                " Please follow the link below to set up a new password:"
+        private const val RESET_LINK_PREFIX = "http://localhost:5173/reset-password/"
+
+        // TODO fix server variable.
+        @Value("\${app.frontend.url}")
+        private const val SERVER_URL: String = "null"
     }
+
+    private val checkResetPasswordLock = Any()
 
     /**
      * Fetches all user infos [UserInfoDTO]
      */
-    fun fetchAllUserInfos(): List<UserInfoDTO> {
+    fun fetchAllUserInfos(): List<FullUserInfoDTO> {
         return this.userRepository.findAll().map {
-            UserInfoDTO(
+
+            val userStatus = extractUserStatus(it)
+
+            FullUserInfoDTO(
                 email = it.email,
                 isAdmin = it.role.matchesAny(UserRole.ADMIN),
-                status = extractUserStatus(it),
+                status = userStatus,
+                canBeReinvited = UserStatus.UNREGISTERED == userStatus,
+                inviteTokenExpiration = if(userStatus == UserStatus.UNREGISTERED) fetchExpirationDate(it.email) else ""
             )
+        }
+    }
+
+    private fun fetchExpirationDate(email : String) : String {
+        return try {
+            this.inviteTokenExpirationService.fetchExpirationDateForUser(email)
+        } catch (e: ResourceNotFoundException) {
+            ""
         }
     }
 
@@ -86,7 +116,7 @@ class UserService(
      * @param email the email of the user to delete
      * @return the [UserInfoDTO] of the deleted user
      */
-    fun deleteUserByEmail(email: String): UserInfoDTO {
+    fun deleteUserByEmail(email: String): DeletedUserInfoDTO {
         // Check if the user is trying to delete himself
         val auth = SecurityContextHolder.getContext().authentication
         val authenticatedUserEmail = auth?.name
@@ -101,60 +131,22 @@ class UserService(
         }
 
         // Find the user & delete the user
-        val user = this.userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
+        val user =
+            this.userRepository.findByEmail(email)
+                ?: throw ResourceNotFoundException("User with email $email was not found")
         this.userRepository.delete(user)
-        return UserInfoDTO(
+        this.inviteTokenExpirationService.deleteEntryForUser(email)
+        return DeletedUserInfoDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
-            status = UserStatus.DELETED,
         )
     }
 
     /**
-     * Changes the role of a user.
-     * @param changeUserRoleRequestDTO the request to change the role of a user
-     * @return the [UserInfoDTO] of the changed user
-     */
-    fun changeUserRole(changeUserRoleRequestDTO: ChangeUserRoleRequestDTO): UserInfoDTO {
-        if (changeUserRoleRequestDTO.newRole.matchesAny(UserRole.INIT)) {
-            // Cannot change user role to INIT
-            throw IllegalArgumentException("Cannot change user role to INIT")
-        }
-
-        val user = UserUtils.fetchLoggedInUser()
-
-        if (user.username == changeUserRoleRequestDTO.email) {
-            throw IllegalArgumentException("Cannot change own role")
-        }
-
-        val foundUser =
-            this.userRepository.findByEmail(changeUserRoleRequestDTO.email)
-                ?: throw ResourceNotFoundException("User with email ${changeUserRoleRequestDTO.email} was not found")
-
-        val updatedUser =
-            foundUser.let {
-                User(
-                    email = it.email,
-                    password = it.password,
-                    role = changeUserRoleRequestDTO.newRole,
-                )
-            }
-
-        // save the updated user
-        this.userRepository.save(updatedUser)
-
-        return UserInfoDTO(
-            email = updatedUser.email,
-            isAdmin = updatedUser.role.matchesAny(UserRole.ADMIN),
-            status = extractUserStatus(updatedUser),
-        )
-    }
-
-    /**
-     * overrride random password with password set by user
+     * override random password with password set by user
      * @param registerRequest
      */
-
+    @Transactional
     fun handleRegister(
         registerRequest: RegisterRequestDTO,
         session: HttpSession,
@@ -172,6 +164,9 @@ class UserService(
 
         setPassword(email, registerRequest.password, isAdmin)
 
+        // Remove the token from the repository
+        this.inviteTokenExpirationService.deleteEntryForUser(email)
+
         val authentication: Authentication =
             authenticationProvider.authenticate(
                 UsernamePasswordAuthenticationToken(
@@ -186,15 +181,19 @@ class UserService(
 
     /**
      * handle the Invite of a new applicant
-     * @param email The email of the applicant which should be created and where the email should be sent to
+     * @param inviteRequest The email of the applicant which should be created and where the email should be sent to and a boolean if user is admin or not
      */
+    @Transactional
     fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
         val user = createUser(inviteRequest)
-        emailService.sendEmail(inviteRequest)
+
+        sendInviteText(inviteRequest)
+
+        // User should be unregistered at this point since he has not registered yet
         return UserInfoDTO(
             email = user.email,
             isAdmin = inviteRequest.isAdmin,
-            status = if (inviteRequest.isAdmin) UserStatus.UNREGISTERED else extractUserStatus(user),
+            status = UserStatus.UNREGISTERED,
         )
     }
 
@@ -208,7 +207,8 @@ class UserService(
             this.userRepository.findByEmail(inviteRequest.email)
 
         if (foundUser != null) {
-            throw UserAlreadyExistsException("User with email $inviteRequest.email already exists")
+            // User should not exists at this point
+            throw UserAlreadyExistsException("User with email ${inviteRequest.email} already exists")
         }
 
         val newUser =
@@ -217,6 +217,7 @@ class UserService(
                 password = passwordEncoder.encode(createPassword(20)),
                 role = UserRole.INIT,
             )
+
         this.userRepository.save(newUser)
 
         if (!inviteRequest.isAdmin) {
@@ -244,9 +245,9 @@ class UserService(
         val newSubmission =
             Submission(
                 userEmail = user.email,
-                expirationDate = Timestamp(0),
+                expirationDate = null,
                 projectID = activeProjectIds[Random.nextInt(activeProjectIds.size)],
-                turnInDate = Timestamp(0),
+                turnInDate = null,
                 status = SubmissionStates.INIT,
             )
         this.submissionRepository.save(newSubmission)
@@ -268,10 +269,13 @@ class UserService(
 
         val userRole = if (isAdmin) UserRole.ADMIN else UserRole.USER
 
+        ValidationUtils.validatePassword(password)
+
         val updatedUser =
             userObject.let {
                 User(
                     email = it.email,
+                    version = it.version,
                     role = userRole,
                     password = passwordEncoder.encode(password),
                 )
@@ -284,65 +288,7 @@ class UserService(
      * @param user the user to extract the status from
      * @return the [UserStatus]
      */
-    private fun extractUserStatus(user: User): UserStatus {
-        // TODO we might have to change this method
-        if (user.role.matchesAny(UserRole.ADMIN)) {
-            // An admin should not submit anything
-            return UserStatus.REGISTERED
-        }
-
-        if (user.role.matchesAny(UserRole.INIT)) {
-            return UserStatus.UNREGISTERED
-        }
-
-        // The user should have a submission if its not the admin
-        val submission =
-            this.submissionRepository.findByUserEmail(user.email)
-                ?: throw IllegalStateException("User has no submission but is not in init state")
-
-        if (hasUserCompletedSubmission(submission)) {
-            return UserStatus.SUBMITTED
-        }
-
-        if (isUserAlreadyImplementing(submission)) {
-            return UserStatus.IMPLEMENTING
-        }
-
-        if (hasUserStartedImplementing(submission).not() || isUserRegistered(user)) {
-            // User did not start implementing the submission
-            return UserStatus.REGISTERED
-        }
-
-        // This should never happen
-        throw IllegalStateException("The userstatus does not match any criteria")
-    }
-
-    /**
-     * Checks if the user has completed the submission.
-     * @param submission the submission to check
-     * @return true if the user has completed the submission
-     */
-    private fun hasUserCompletedSubmission(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.REVIEWED, SubmissionStates.SUBMITTED)
-    }
-
-    /**
-     * Checks if the user is already implementing the submission.
-     * @param submission the submission to check
-     * @return true if the user is already implementing the submission
-     */
-    private fun isUserAlreadyImplementing(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.IN_IMPLEMENTATION)
-    }
-
-    /**
-     * Checks if the user has started implementing the submission.
-     * @param submission the submission to check
-     * @return true if the user has started implementing the submission
-     */
-    private fun hasUserStartedImplementing(submission: Submission): Boolean {
-        return submission.status.matchesAny(SubmissionStates.INIT).not()
-    }
+    private fun extractUserStatus(user: User) = if (isUserRegistered(user)) UserStatus.REGISTERED else UserStatus.UNREGISTERED
 
     /**
      * Checks if the user is registered (not init anymore)
@@ -369,7 +315,120 @@ class UserService(
                     ),
                 ),
             )
-        this.resetPasswordTokenStorage.addToken(token)
         this.emailService.sendEmail(email, RESET_PASSWORD_SUBJECT, RESET_PASSWORD_TEXT + RESET_LINK_PREFIX + token)
+    }
+
+    /**
+     * Change the password of the user with the provided token
+     * @param changePasswordRequestDTO The request to change the password
+     * @throws ResourceNotFoundException if the user with the email from the token was not found
+     * @throws InvalidTokenException if the token is invalid
+     */
+    fun changePassword(changePasswordRequestDTO: ChangePasswordRequestDTO) {
+        synchronized(checkResetPasswordLock) {
+            this.resetPasswordTokenStorage.isTokenUsed(changePasswordRequestDTO.token)
+                .takeIf { it }
+                ?.let { throw TokenAlreadyUsedException("Token has already be used") }
+
+            val email = JWTUtils.getClaimItem(changePasswordRequestDTO.token, JWTUtils.MAIL_KEY) as String
+
+            ValidationUtils.validateEmail(email)
+            ValidationUtils.validatePassword(changePasswordRequestDTO.newPassword)
+
+            val user = userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
+
+            val updatedUser =
+                user.let {
+                    User(
+                        email = it.email,
+                        role = it.role,
+                        password = passwordEncoder.encode(changePasswordRequestDTO.newPassword),
+                        version = it.version,
+                    )
+                }
+            userRepository.save(updatedUser)
+            this.resetPasswordTokenStorage.addToken(changePasswordRequestDTO.token)
+        }
+    }
+
+    /**
+     * checks if the current user is an admin
+     * @return if the current user is an admin
+     */
+    fun fetchLoggedInUserAdminStatus(): IsAdminDTO {
+        return IsAdminDTO(fetchUserInfosForEmail(UserUtils.fetchLoggedInUser().username).isAdmin)
+    }
+
+    /**
+     * handles the entire behaviour of the repeat send invite
+     * @param inviteRequest the repeat invite request
+     */
+    @Transactional
+    fun handleResendInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
+        val user: User =
+            userRepository.findByEmail(inviteRequest.email)
+                ?: throw ResourceNotFoundException("User with email ${inviteRequest.email} was not found")
+
+        if (extractUserStatus(user) != UserStatus.UNREGISTERED) {
+            throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
+        }
+
+        sendInviteText(inviteRequest)
+
+        return UserInfoDTO(
+            inviteRequest.email,
+            inviteRequest.isAdmin,
+            extractUserStatus(user),
+        )
+    }
+
+    private fun fetchInviteSubject(isAdmin: Boolean): String {
+        return if (isAdmin) MessageConstants.ADMIN_SUBJECT else MessageConstants.USER_SUBJECT
+    }
+
+    private fun sendInviteText(inviteRequest: InviteRequestDTO) {
+        val claims = mapOf(JWTUtils.MAIL_KEY to inviteRequest.email, JWTUtils.ADMIN_KEY to inviteRequest.isAdmin)
+
+        val expiration = Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS))
+        val token =
+            JWTUtils.createToken(claims, expiration)
+
+        val subject = fetchInviteSubject(inviteRequest.isAdmin)
+        val text = fetchInviteText(token, inviteRequest.isAdmin)
+
+        this.inviteTokenExpirationService.updateExpirationToken(inviteRequest.email, expiration.time)
+
+        this.emailService.sendEmail(inviteRequest.email, subject, text)
+    }
+
+    private fun fetchInviteText(
+        token: String,
+        isAdmin: Boolean,
+    ): String {
+        if (isAdmin) {
+            return "<p>Hallo,<br>" +
+                "<br>" +
+                "Mit dem unten stehenden Link können sie sich als Admin auf der coding challange Plattform" +
+                " von Amplimind registrieren.<br>" +
+                "<br>" +
+                "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
+                "<br>" +
+                "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b>" +
+                MessageConstants.EMAIL_SIGNATURE +
+                "</p>"
+        }
+
+        return "<p>Sehr geehrter Bewerber,<br>" +
+            "<br>" +
+            "wir laden Sie hiermit zu ihrer Coding Challange ein.<br>" +
+            "Mit dem unten stehenden Link können Sie sich auf unserer Plattform registrieren.<br>" +
+            "<br>" +
+            "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
+            "<br>" +
+            "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
+            "können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> " +
+            "Zeit ihre Lösung hochzuladen.<br>" +
+            MessageConstants.EMAIL_SIGNATURE +
+            "</p>"
     }
 }

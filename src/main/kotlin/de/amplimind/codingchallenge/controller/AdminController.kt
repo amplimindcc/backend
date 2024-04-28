@@ -1,14 +1,16 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
+import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
+import de.amplimind.codingchallenge.dto.FullUserInfoDTO
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.UserInfoDTO
 import de.amplimind.codingchallenge.dto.UserProjectDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
+import de.amplimind.codingchallenge.service.InviteTokenExpirationService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.service.UserService
@@ -34,6 +36,7 @@ class AdminController(
     private val projectService: ProjectService,
     private val userService: UserService,
     private val submissionService: SubmissionService,
+    private val inviteTokenExpirationService: InviteTokenExpirationService,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
@@ -50,7 +53,7 @@ class AdminController(
     @Operation(summary = "Endpoint for fetching all infos for the users")
     @ApiResponse(responseCode = "200", description = "All user infos were fetched successfully.")
     @GetMapping("fetch/users/all")
-    fun fetchAllUsers(): ResponseEntity<List<UserInfoDTO>> {
+    fun fetchAllUsers(): ResponseEntity<List<FullUserInfoDTO>> {
         return ResponseEntity.ok(this.userService.fetchAllUserInfos())
     }
 
@@ -74,22 +77,10 @@ class AdminController(
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
         @PathVariable email: String,
-    ): ResponseEntity<UserInfoDTO> {
+    ): ResponseEntity<DeletedUserInfoDTO> {
         ValidationUtils.validateEmail(email)
         val userInfo = this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok(userInfo)
-    }
-
-    @Operation(summary = "Endpoint for changing the role of a user")
-    @ApiResponse(responseCode = "200", description = "User role was changed successfully.")
-    @ApiResponse(responseCode = "400", description = "If the role change was not successful")
-    @ApiResponse(responseCode = "401", description = "If no authentication is provided.")
-    @ApiResponse(responseCode = "404", description = "User with email was not found.")
-    @PutMapping("change/role")
-    fun changeRole(
-        @RequestBody changeUserRoleRequest: ChangeUserRoleRequestDTO,
-    ): ResponseEntity<UserInfoDTO> {
-        return ResponseEntity.ok(this.userService.changeUserRole(changeUserRoleRequest))
     }
 
     @Operation(summary = "Endpoint for creating User and emailing him the invite")
@@ -149,6 +140,17 @@ class AdminController(
         )
     }
 
+    @Operation(summary = "Download project of user")
+    @ApiResponse(responseCode = "200", description = "Project downloaded successfully")
+    @ApiResponse(responseCode = "404", description = "User project not found")
+    @ApiResponse(responseCode = "422", description = "User not found")
+    @GetMapping("/download/project/{email}")
+    fun downloadUserProject(
+        @PathVariable email: String,
+    ) {
+        // TODO Wait until upload is done
+    }
+
     @Operation(summary = "Endpoint for deleting a project.")
     @ApiResponse(responseCode = "200", description = "Project was deleted successfully")
     @ApiResponse(responseCode = "409", description = "Project won't be deleted as it is still in use")
@@ -157,5 +159,29 @@ class AdminController(
         @PathVariable projectId: Long,
     ) {
         projectService.deleteProject(projectId)
+    }
+
+    @Operation(summary = "Endpoint to send user another invite")
+    @ApiResponse(responseCode = "200", description = "Repeated invite successfully.")
+    @ApiResponse(responseCode = "404", description = "User does not exist")
+    @ApiResponse(responseCode = "409", description = "User is already registered and does not need a reinvite")
+    @ApiResponse(responseCode = "422", description = "Email supplied was not an actual email")
+    @PostMapping("/resend/invite")
+    fun resendInvite(
+        @RequestBody inviteRequest: InviteRequestDTO,
+    ): ResponseEntity<UserInfoDTO> {
+        ValidationUtils.validateEmail(inviteRequest.email)
+        return ResponseEntity.ok(userService.handleResendInvite(inviteRequest))
+    }
+
+    @Operation(summary = "Fetches the expiration time (dd.mm.yyyy hh:mm) for a invite link for the provided email of a user")
+    @ApiResponse(responseCode = "200", description = "Expiration fetched successfully")
+    @ApiResponse(responseCode = "404", description = "There is no expiration date for the provided email")
+    @GetMapping("invite/expiration/{email}")
+    fun fetchExpirationForInvite(
+        @PathVariable email: String,
+    ): ResponseEntity<String> {
+        val expirationDate = inviteTokenExpirationService.fetchExpirationDateForUser(email)
+        return ResponseEntity.ok(expirationDate)
     }
 }

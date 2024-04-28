@@ -1,31 +1,32 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.UserStatus
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
+import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
+import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
-import io.mockk.slot
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 
 /**
@@ -40,16 +41,30 @@ internal class UserServiceTest {
     private lateinit var submissionRepository: SubmissionRepository
 
     @MockK
-    private lateinit var passwordEncoder: PasswordEncoder
+    private lateinit var projectRepository: ProjectRepository
 
-    @InjectMockKs
-    private lateinit var userService: UserService
+    @MockK
+    private lateinit var passwordEncoder: PasswordEncoder
 
     @MockK
     private lateinit var emailService: EmailService
 
+    @MockK
+    private lateinit var authenticationProvider: AuthenticationProvider
+
+    @MockK
+    private lateinit var resetPasswordTokenStorage: ResetPasswordTokenStorage
+
+    @MockK
+    private lateinit var inviteTokenExpirationService: InviteTokenExpirationService
+
+    @InjectMockKs
+    private lateinit var userService: UserService
+
     @BeforeEach
-    fun setUp() = MockKAnnotations.init(this)
+    fun setUp() {
+        MockKAnnotations.init(this)
+    }
 
     companion object {
         val adminUser =
@@ -58,80 +73,6 @@ internal class UserServiceTest {
                 password = "password",
                 role = UserRole.ADMIN,
             )
-    }
-
-    /**
-     * Test that a [IllegalArgumentException] is thrown when trying to change a user role to [UserRole.INIT].
-     */
-    @Test
-    fun test_change_user_role_fail() {
-        val changeUserRoleRequest =
-            ChangeUserRoleRequestDTO(
-                email = "ignore@web.de",
-                newRole = UserRole.INIT,
-            )
-
-        assertThrows<IllegalArgumentException> { this.userService.changeUserRole(changeUserRoleRequest) }
-    }
-
-    /**
-     * Test that a [ResourceNotFoundException] is thrown when trying to change the role of a user that does not exist.
-     */
-    @Test
-    @WithMockUser(username = "admin", roles = ["ADMIN"])
-    fun test_change_user_role_not_found_user() {
-        val changeUserRoleRequest =
-            ChangeUserRoleRequestDTO(
-                email = "doesnotexists@web.de",
-                newRole = UserRole.ADMIN,
-            )
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(adminUser, null)
-
-        every { userRepository.findByEmail(changeUserRoleRequest.email) } returns null
-
-        assertThrows<ResourceNotFoundException> { this.userService.changeUserRole(changeUserRoleRequest) }
-    }
-
-    /**
-     * Test a successful role change.
-     */
-    @Test
-    fun test_successful_role_change() {
-        val changeUserRoleRequest =
-            ChangeUserRoleRequestDTO(
-                email = "user@web.de",
-                newRole = UserRole.ADMIN,
-            )
-
-        val storedUser =
-            User(
-                email = changeUserRoleRequest.email,
-                password = "password",
-                role = UserRole.USER,
-            )
-
-        val updatedUser =
-            User(
-                email = changeUserRoleRequest.email,
-                password = "password",
-                role = changeUserRoleRequest.newRole,
-            )
-
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(adminUser, null)
-
-        val userSlot = slot<User>()
-
-        every { userRepository.findByEmail(changeUserRoleRequest.email) } returns storedUser
-
-        every { userRepository.save(capture(userSlot)) } returns updatedUser
-
-        val result = this.userService.changeUserRole(changeUserRoleRequest)
-
-        assert(userSlot.captured.email == updatedUser.email)
-        assert(userSlot.captured.role == updatedUser.role)
-
-        assert(result.email == updatedUser.email)
-        assert(result.isAdmin)
     }
 
     /**
@@ -199,12 +140,12 @@ internal class UserServiceTest {
         every { submissionRepository.findByUserEmail(emailToUse) } returns submission
         every { submissionRepository.delete(submission) } just Runs
         every { userRepository.delete(user) } just Runs
+        every { inviteTokenExpirationService.deleteEntryForUser(any()) } just Runs
 
         val result = userService.deleteUserByEmail(emailToUse)
 
         assertEquals(emailToUse, result.email)
         assertFalse(result.isAdmin)
-        assertEquals(UserStatus.DELETED, result.status)
     }
 
     /**
@@ -239,5 +180,51 @@ internal class UserServiceTest {
         SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(emailToUse, null)
 
         assertThrows<UserSelfDeleteException> { userService.deleteUserByEmail(emailToUse) }
+    }
+
+    /**
+     * Test the handle invite method in the [UserService].
+     */
+    @Test
+    fun test_handleInvite() {
+        val emailToUse = "1a1new_user@web.de"
+
+        val inviteRequestDTO =
+            InviteRequestDTO(
+                email = emailToUse,
+                isAdmin = true,
+            )
+
+        every { userRepository.findByEmail(emailToUse) } returns null
+        every { passwordEncoder.encode(any()) } returns "password"
+        every { emailService.sendEmail(any(), any(), any()) } just Runs
+        every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
+        every { inviteTokenExpirationService.updateExpirationToken(any(), any()) } just Runs
+
+        val response = userService.handleInvite(inviteRequestDTO)
+
+        assert(response.email == inviteRequestDTO.email)
+        assert(response.isAdmin)
+    }
+
+    /**
+     * Makes sure a exception is thrown when trying to invite a user that already exists.
+     */
+    @Test
+    fun test_handleInvite_fail() {
+        val emailToUse = "user@web.de"
+
+        val inviteRequestDTO =
+            InviteRequestDTO(
+                email = emailToUse,
+                isAdmin = true,
+            )
+
+        every { userRepository.findByEmail(emailToUse) } returns User(emailToUse, "password", UserRole.USER)
+        every { passwordEncoder.encode(any()) } returns "password"
+        every { emailService.sendEmail(any(), any(), any()) } just Runs
+        every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
+
+        assertThrows<UserAlreadyExistsException> { userService.handleInvite(inviteRequestDTO) }
     }
 }

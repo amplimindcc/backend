@@ -6,6 +6,7 @@ import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.repository.ProjectRepository
+import de.amplimind.codingchallenge.repository.SubmissionRepository
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
@@ -26,6 +27,9 @@ import java.util.Optional
 internal class ProjectServiceTest {
     @MockK
     lateinit var projectRepository: ProjectRepository
+
+    @MockK
+    private lateinit var submissionRepository: SubmissionRepository
 
     @InjectMockKs
     lateinit var projectService: ProjectService

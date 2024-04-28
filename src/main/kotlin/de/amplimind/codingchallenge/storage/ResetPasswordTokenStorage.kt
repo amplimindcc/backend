@@ -2,7 +2,7 @@ package de.amplimind.codingchallenge.storage
 
 import de.amplimind.codingchallenge.utils.JWTUtils
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -32,6 +32,10 @@ class ResetPasswordTokenStorage {
                 usedNonExpiredToken.remove(token)
             }
         }
+    }
+
+    fun isTokenUsed(token: String): Boolean {
+        return usedNonExpiredToken.contains(token)
     }
 
     fun addToken(token: String) {

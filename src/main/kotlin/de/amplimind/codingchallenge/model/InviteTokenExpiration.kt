@@ -1,24 +1,25 @@
 package de.amplimind.codingchallenge.model
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import org.springframework.data.annotation.Version
-import java.sql.Timestamp
+import jakarta.persistence.Version
 
+/**
+ * Holds information about the expiration of an invite token for a certain user
+ */
 @Entity
-@Table(name = "submissions")
-class Submission(
+@Table(name = "invite_tokens_expiration")
+class InviteTokenExpiration(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-    val userEmail: String,
-    var expirationDate: Timestamp? = null,
-    val projectID: Long,
-    var turnInDate: Timestamp? = null,
-    var status: SubmissionStates,
+    val email: String,
+    @Column(name = "token_expiration")
+    var expirationInMillis: Long,
     @Version
     var version: Long? = null,
 )

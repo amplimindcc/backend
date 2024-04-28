@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.springframework.data.annotation.Version
 
 /**
  * Represents a project.
@@ -19,4 +20,6 @@ class Project(
     var title: String,
     val description: String,
     var active: Boolean,
+    @Version
+    var version: Long? = null,
 )

@@ -1,9 +1,14 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
-import de.amplimind.codingchallenge.exceptions.*
+import de.amplimind.codingchallenge.exceptions.EmailFormatException
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
+import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
+import de.amplimind.codingchallenge.exceptions.ProjectInUseException
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.scheduling.Trigger
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 
@@ -39,12 +44,22 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException::class)
     fun handleInvalidTokenException(ex: InvalidTokenException): ResponseEntity<String> {
-        return ResponseEntity("${ex.message}", HttpStatus.BAD_REQUEST)
+        return ResponseEntity("Token is invalid!", HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(ExpiredJwtException::class)
+    fun handleExpiredJwtException(ex: ExpiredJwtException): ResponseEntity<String> {
+        return ResponseEntity("Token is expired!", HttpStatus.FORBIDDEN)
     }
 
     @ExceptionHandler(NoAuthenticationException::class)
     fun handleNoAuthenticationException(ex: NoAuthenticationException): ResponseEntity<String> {
         return ResponseEntity("No authentication: ${ex.message}", HttpStatus.UNAUTHORIZED)
+    }
+
+    @ExceptionHandler(PasswordValidationException::class)
+    fun handlePasswordValidationException(ex: PasswordValidationException): ResponseEntity<String> {
+        return ResponseEntity("Password validation error: ${ex.message}", HttpStatus.PRECONDITION_FAILED)
     }
 
     @ExceptionHandler(EmailFormatException::class)
@@ -75,5 +90,15 @@ class GlobalExceptionHandler {
     @ExceptionHandler(TriggerWorkflowException::class)
     fun handleTriggerWorkflowException(ex: TriggerWorkflowException): ResponseEntity<String> {
         return ResponseEntity("Error whilst triggering workflow: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(TokenAlreadyUsedException::class)
+    fun handleTokenAlreadyUsedException(ex: TokenAlreadyUsedException): ResponseEntity<String> {
+        return ResponseEntity(ex.message, HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(UserAlreadyRegisteredException::class)
+    fun handleUserAlreadyRegisteredException(ex: UserAlreadyRegisteredException): ResponseEntity<String> {
+        return ResponseEntity(ex.message, HttpStatus.CONFLICT)
     }
 }
