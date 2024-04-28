@@ -48,8 +48,10 @@ class SubmissionService(
         val submissionExpirationDate = submission.expirationDate
         val newTurnInDate = Timestamp(System.currentTimeMillis())
 
-        if(TimeUnit.MICROSECONDS.toDays(submissionExpirationDate.time - newTurnInDate.time) <= 0) {
-            throw TooLateSubmissionException("Too late Submission. Submission was due $submissionExpirationDate")
+        if (submissionExpirationDate != null) {
+            if(TimeUnit.MICROSECONDS.toDays(submissionExpirationDate.time - newTurnInDate.time) <= 0) {
+                throw TooLateSubmissionException("Too late Submission. Submission was due $submissionExpirationDate")
+            }
         }
 
         val gitHubApiClient = createGitHubApiClient(accessToken)
