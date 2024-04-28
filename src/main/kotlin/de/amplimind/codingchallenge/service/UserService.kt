@@ -78,7 +78,6 @@ class UserService(
      */
     fun fetchAllUserInfos(): List<FullUserInfoDTO> {
         return this.userRepository.findAll().map {
-
             val userStatus = extractUserStatus(it)
 
             FullUserInfoDTO(
@@ -86,12 +85,12 @@ class UserService(
                 isAdmin = it.role.matchesAny(UserRole.ADMIN),
                 status = userStatus,
                 canBeReinvited = UserStatus.UNREGISTERED == userStatus,
-                inviteTokenExpiration = if(userStatus == UserStatus.UNREGISTERED) fetchExpirationDate(it.email) else ""
+                inviteTokenExpiration = if (userStatus == UserStatus.UNREGISTERED) fetchExpirationDate(it.email) else "",
             )
         }
     }
 
-    private fun fetchExpirationDate(email : String) : String {
+    private fun fetchExpirationDate(email: String): String {
         return try {
             this.inviteTokenExpirationService.fetchExpirationDateForUser(email)
         } catch (e: ResourceNotFoundException) {
@@ -184,22 +183,24 @@ class UserService(
      * @param inviteRequest The email of the applicant which should be created and where the email should be sent to and a boolean if user is admin or not
      */
     @Transactional
-    fun handleInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
+    fun handleInvite(inviteRequest: InviteRequestDTO): FullUserInfoDTO {
         val user = createUser(inviteRequest)
 
         sendInviteText(inviteRequest)
 
         // User should be unregistered at this point since he has not registered yet
-        return UserInfoDTO(
+        return FullUserInfoDTO(
             email = user.email,
             isAdmin = inviteRequest.isAdmin,
             status = UserStatus.UNREGISTERED,
+            canBeReinvited = true,
+            inviteTokenExpiration = fetchExpirationDate(user.email),
         )
     }
 
     /**
      * Create a new User
-     * @param email The email of the user which should be created
+     * @param inviteRequest the invite request data transfer object containing all relevant information
      */
     @Transactional
     fun createUser(inviteRequest: InviteRequestDTO): User {
@@ -207,7 +208,7 @@ class UserService(
             this.userRepository.findByEmail(inviteRequest.email)
 
         if (foundUser != null) {
-            // User should not exists at this point
+            // User should not exist at this point
             throw UserAlreadyExistsException("User with email ${inviteRequest.email} already exists")
         }
 
@@ -364,21 +365,24 @@ class UserService(
      * @param inviteRequest the repeat invite request
      */
     @Transactional
-    fun handleResendInvite(inviteRequest: InviteRequestDTO): UserInfoDTO {
+    fun handleResendInvite(inviteRequest: InviteRequestDTO): FullUserInfoDTO {
         val user: User =
             userRepository.findByEmail(inviteRequest.email)
                 ?: throw ResourceNotFoundException("User with email ${inviteRequest.email} was not found")
+        val userStatus = extractUserStatus(user)
 
-        if (extractUserStatus(user) != UserStatus.UNREGISTERED) {
+        if (userStatus != UserStatus.UNREGISTERED) {
             throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
         }
 
         sendInviteText(inviteRequest)
 
-        return UserInfoDTO(
-            inviteRequest.email,
-            inviteRequest.isAdmin,
-            extractUserStatus(user),
+        return FullUserInfoDTO(
+            email = inviteRequest.email,
+            isAdmin = inviteRequest.isAdmin,
+            status = userStatus,
+            canBeReinvited = true,
+            inviteTokenExpiration = fetchExpirationDate(inviteRequest.email),
         )
     }
 

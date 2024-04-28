@@ -90,7 +90,7 @@ class AdminController(
     @PostMapping("invite")
     fun createInvite(
         @RequestBody inviteRequest: InviteRequestDTO,
-    ): ResponseEntity<UserInfoDTO> {
+    ): ResponseEntity<FullUserInfoDTO> {
         ValidationUtils.validateEmail(inviteRequest.email)
         return ResponseEntity.ok(this.userService.handleInvite(inviteRequest))
     }
@@ -169,7 +169,7 @@ class AdminController(
     @PostMapping("/resend/invite")
     fun resendInvite(
         @RequestBody inviteRequest: InviteRequestDTO,
-    ): ResponseEntity<UserInfoDTO> {
+    ): ResponseEntity<FullUserInfoDTO> {
         ValidationUtils.validateEmail(inviteRequest.email)
         return ResponseEntity.ok(userService.handleResendInvite(inviteRequest))
     }
