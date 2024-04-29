@@ -1,10 +1,6 @@
 package de.amplimind.codingchallenge.config
 
-import de.amplimind.codingchallenge.model.Project
-import de.amplimind.codingchallenge.model.Submission
-import de.amplimind.codingchallenge.model.SubmissionStates
-import de.amplimind.codingchallenge.model.User
-import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.model.*
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
@@ -78,6 +74,27 @@ class AppConfig(
                     role = UserRole.INIT,
                 )
 
+            val initUser1 =
+                User(
+                    email = "init1@web.de",
+                    password = null,
+                    role = UserRole.INIT,
+                )
+
+            val initUser2 =
+                User(
+                    email = "init2@web.de",
+                    password = null,
+                    role = UserRole.INIT,
+                )
+
+            val initUser3 =
+                User(
+                    email = "init3@web.de",
+                    password = null,
+                    role = UserRole.INIT,
+                )
+
             val implementingUser =
                 User(
                     email = "impl@web.de",
@@ -92,7 +109,7 @@ class AppConfig(
                     role = UserRole.USER,
                 )
 
-            this.userRepository.saveAll(listOf(admin, user, initUser, implementingUser, submittedUser))
+            this.userRepository.saveAll(listOf(admin, user, initUser, initUser1, initUser2, initUser3, implementingUser, submittedUser))
 
             val userSubmission =
                 Submission(

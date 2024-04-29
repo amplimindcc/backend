@@ -15,12 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/v1/auth/")
@@ -31,6 +26,7 @@ class AuthController(
 ) {
     @Operation(summary = "Entry point for user login")
     @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
+    @ApiResponse(responseCode = "403", description = "username or password is incorrect")
     @PostMapping("/login")
     fun login(
         @RequestBody loginRequest: LoginRequestDTO,
@@ -50,8 +46,11 @@ class AuthController(
 
     @Operation(summary = "Entry point for invite")
     @ApiResponse(responseCode = "200", description = "User registered successfully")
-    @ApiResponse(responseCode = "400", description = "Token is invalid. Repeated requests with the same token will also fail!")
-    @ApiResponse(responseCode = "403", description = "Token is expired. Repeated requests with the same token will also fail!")
+    @ApiResponse(responseCode = "400", description = "Token is invalid.")
+    @ApiResponse(responseCode = "403", description = "Token is expired.")
+    @ApiResponse(responseCode = "404", description = "User does not exist")
+    @ApiResponse(responseCode = "409", description = "Token was already used.")
+    @ApiResponse(responseCode = "412", description = "password does not fulfill requirements")
     @PostMapping("/register")
     fun invite(
         @RequestBody registerRequest: RegisterRequestDTO,
@@ -80,6 +79,7 @@ class AuthController(
     @ApiResponse(responseCode = "200", description = "Token is valid")
     @ApiResponse(responseCode = "400", description = "Token is invalid")
     @ApiResponse(responseCode = "403", description = "Token is expired")
+    @ApiResponse(responseCode = "409", description = "Token was already used.")
     @GetMapping("/check-token/{token}")
     fun checkTokenValidity(
         @PathVariable token: String,
