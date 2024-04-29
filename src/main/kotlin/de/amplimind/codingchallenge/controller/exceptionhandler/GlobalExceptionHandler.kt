@@ -39,7 +39,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidTokenException::class)
     fun handleInvalidTokenException(ex: InvalidTokenException): ResponseEntity<String> {
-        return ResponseEntity("Token is invalid!", HttpStatus.UNPROCESSABLE_ENTITY)
+        return ResponseEntity("Token is invalid!", HttpStatus.BAD_REQUEST)
     }
 
     @ExceptionHandler(ExpiredJwtException::class)

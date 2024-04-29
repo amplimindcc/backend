@@ -164,7 +164,7 @@ internal class AccountControllerTest
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
         }.andExpect {
-            status { isUnprocessableEntity() }
+            status { isBadRequest() }
         }
     }
 
