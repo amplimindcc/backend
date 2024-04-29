@@ -64,7 +64,6 @@ dependencies {
     implementation("com.squareup.retrofit2:adapter-rxjava2:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.3.0")
 
-
     runtimeOnly("org.springdoc:springdoc-openapi-kotlin:1.8.0")
     runtimeOnly("com.mysql:mysql-connector-j")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")

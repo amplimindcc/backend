@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile
  * @param description the description the user sent
  * @param zipFileContent the code the user wants to submit
  */
-data class SubmitSolutionRequestDTO (
+data class SubmitSolutionRequestDTO(
     val description: String,
-    val zipFileContent: MultipartFile
+    val zipFileContent: MultipartFile,
 )

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
  * Tests for the [ValidationUtils]
  */
 class ValidationUtilsTest {
-
     /**
      * Test to validate if a password is too short
      */

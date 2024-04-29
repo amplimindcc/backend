@@ -1,6 +1,10 @@
 package de.amplimind.codingchallenge.config
 
-import de.amplimind.codingchallenge.model.*
+import de.amplimind.codingchallenge.model.Project
+import de.amplimind.codingchallenge.model.Submission
+import de.amplimind.codingchallenge.model.SubmissionStates
+import de.amplimind.codingchallenge.model.User
+import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
