@@ -2,20 +2,11 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
-import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
-import de.amplimind.codingchallenge.dto.FullUserInfoDTO
-import de.amplimind.codingchallenge.dto.IsAdminDTO
-import de.amplimind.codingchallenge.dto.UserInfoDTO
-import de.amplimind.codingchallenge.dto.UserStatus
+import de.amplimind.codingchallenge.dto.*
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.InvalidTokenException
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -40,7 +31,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -306,6 +297,7 @@ class UserService(
      */
     fun requestPasswordChange(email: String) {
         ValidationUtils.validateEmail(email)
+        userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
         val token =
             JWTUtils.createToken(
                 mapOf(JWTUtils.MAIL_KEY to email),
