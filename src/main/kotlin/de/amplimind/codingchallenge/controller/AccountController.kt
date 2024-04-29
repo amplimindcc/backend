@@ -32,6 +32,7 @@ class AccountController(
     @ApiResponse(responseCode = "409", description = "Token has already been used")
     @ApiResponse(responseCode = "400", description = "Token is not valid")
     @ApiResponse(responseCode = "412", description = "Password doesnt fulfill the Requirements")
+    @ApiResponse(responseCode = "403", description = "Token is expired")
     @PostMapping("change-password")
     fun changePassword(
         @RequestBody changePasswordRequestDTO: ChangePasswordRequestDTO,
