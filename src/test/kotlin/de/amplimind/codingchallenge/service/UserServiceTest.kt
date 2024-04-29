@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.anyString
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -200,6 +201,7 @@ internal class UserServiceTest {
         every { emailService.sendEmail(any(), any(), any()) } just Runs
         every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
         every { inviteTokenExpirationService.updateExpirationToken(any(), any()) } just Runs
+        every { inviteTokenExpirationService.fetchExpirationDateForUser(any()) } returns anyString()
 
         val response = userService.handleInvite(inviteRequestDTO)
 

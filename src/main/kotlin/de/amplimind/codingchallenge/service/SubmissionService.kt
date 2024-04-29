@@ -1,18 +1,18 @@
 package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
+import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
+import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.extensions.DTOExtensions.toSumbissionInfoDTO
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
-import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
-import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
-import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.createGitHubApiClient
 import de.amplimind.codingchallenge.utils.UserUtils
-import kotlinx.coroutines.*
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.sql.Timestamp
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 @Service
 class SubmissionService(
     private val submissionRepository: SubmissionRepository,
-    private val gitHubService: GitHubService
+    private val gitHubService: GitHubService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     val accessToken = ""
@@ -38,10 +38,11 @@ class SubmissionService(
      */
     fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO): SubmissionInfoDTO {
         val userEmail = UserUtils.fetchLoggedInUser().username
-        val submission = this.submissionRepository.findByUserEmail(userEmail)
-            ?:throw ResourceNotFoundException("Submission with email $userEmail was not found");
+        val submission =
+            this.submissionRepository.findByUserEmail(userEmail)
+                ?: throw ResourceNotFoundException("Submission with email $userEmail was not found")
 
-        if((submission.status == SubmissionStates.IN_IMPLEMENTATION).not()) {
+        if ((submission.status == SubmissionStates.IN_IMPLEMENTATION).not()) {
             throw IllegalStateException("Submission is in state ${submission.status} and can not be submitted")
         }
 
@@ -49,7 +50,7 @@ class SubmissionService(
         val newTurnInDate = Timestamp(System.currentTimeMillis())
 
         if (submissionExpirationDate != null) {
-            if(TimeUnit.MICROSECONDS.toDays(submissionExpirationDate.time - newTurnInDate.time) <= 0) {
+            if (TimeUnit.MICROSECONDS.toDays(submissionExpirationDate.time - newTurnInDate.time) <= 0) {
                 throw TooLateSubmissionException("Too late Submission. Submission was due $submissionExpirationDate")
             }
         }

@@ -4,11 +4,9 @@ import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.exceptions.ZipBombException
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.util.*
+import java.util.Base64
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
-
 
 object ZipUtils {
     private const val MAX_FILE_SIZE: Long = 100 * 1024 * 1024 // 100MB
@@ -37,10 +35,13 @@ object ZipUtils {
      * @param files a map of the files and their paths
      * @return the [Map] of the files and their content base64 encoded
      */
-    private fun traverseFolder(zipInputStream: ZipInputStream, files: MutableMap<String, String>): MutableMap<String, String> {
+    private fun traverseFolder(
+        zipInputStream: ZipInputStream,
+        files: MutableMap<String, String>,
+    ): MutableMap<String, String> {
         var entry = zipInputStream.nextEntry
         while (entry != null) {
-            if(!entry.isDirectory) {
+            if (!entry.isDirectory) {
                 val buffer = ByteArray(1024)
                 var len: Int
                 val outputStream = ByteArrayOutputStream()

@@ -8,12 +8,16 @@ import de.amplimind.codingchallenge.service.SubmissionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.ModelAttribute
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/v1/submission")
-class SubmissionController (
+class SubmissionController(
     private val submissionService: SubmissionService,
     private val gitHubService: GitHubService,
 ) {
@@ -21,17 +25,17 @@ class SubmissionController (
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
     @PostMapping("/submit")
     fun submit(
-        @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO
+        @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO,
     ): ResponseEntity<SubmissionInfoDTO> {
         return ResponseEntity.ok(this.submissionService.submitCode(submitSolutionRequestDTO))
     }
 
     @Operation(summary = "Endpoint for getting the linting result for a specific user.")
     @ApiResponse(responseCode = "200", description = "Get the linting results")
-    @GetMapping("/lint/{user}")
+    @GetMapping("/lint/{email}")
     fun submit(
         @PathVariable email: String,
-    ) : ResponseEntity<LintResultDTO> {
+    ): ResponseEntity<LintResultDTO> {
         return ResponseEntity.ok(this.gitHubService.getLintingResult(email))
     }
 }

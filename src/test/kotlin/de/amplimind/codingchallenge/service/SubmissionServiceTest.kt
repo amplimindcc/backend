@@ -23,6 +23,9 @@ internal class SubmissionServiceTest {
     @MockK
     private lateinit var submissionRepository: SubmissionRepository
 
+    @MockK
+    private lateinit var gitHubService: GitHubService
+
     @InjectMockKs
     private lateinit var submissionService: SubmissionService
 

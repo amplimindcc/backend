@@ -16,8 +16,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
-
+import java.util.Date
 
 /**
  * Test class for [AuthControllerTest].
@@ -26,237 +25,239 @@ import java.util.*
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 internal class AuthControllerTest
-@Autowired
-constructor(
-    val mockMvc: MockMvc,
-    val objectMapper: ObjectMapper,
-) {
-
-    fun gen_token(email: String, isAdmin: Boolean): String{
-        return JWTUtils.createToken(
-            mapOf(JWTUtils.MAIL_KEY to email, JWTUtils.ADMIN_KEY to isAdmin),
-            Date.from(
-                Instant.now().plus(
-                    JWTUtils.RESET_PASSWORD_EXPIRATION_MIN,
-                    ChronoUnit.MINUTES,
+    @Autowired
+    constructor(
+        val mockMvc: MockMvc,
+        val objectMapper: ObjectMapper,
+    ) {
+        fun gen_token(
+            email: String,
+            isAdmin: Boolean,
+        ): String {
+            return JWTUtils.createToken(
+                mapOf(JWTUtils.MAIL_KEY to email, JWTUtils.ADMIN_KEY to isAdmin),
+                Date.from(
+                    Instant.now().plus(
+                        JWTUtils.RESET_PASSWORD_EXPIRATION_MIN,
+                        ChronoUnit.MINUTES,
+                    ),
                 ),
-            ),
-        )
-    }
-    /**
-     * Test that successful login returns 200.
-     */
-    @Test
-    fun test_login_successful() {
-        val request =
-            LoginRequestDTO(
-                email = "admin@web.de",
-                password = "admin"
             )
+        }
 
-        this.mockMvc.post("/v1/auth/login"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-           status { isOk() }
+        /**
+         * Test that successful login returns 200.
+         */
+        @Test
+        fun test_login_successful() {
+            val request =
+                LoginRequestDTO(
+                    email = "admin@web.de",
+                    password = "admin",
+                )
+
+            this.mockMvc.post("/v1/auth/login") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isOk() }
+            }
+        }
+
+        /**
+         * Test that an invalid username returns error 403
+         */
+        @Test
+        fun test_login_invalid_username() {
+            val request =
+                LoginRequestDTO(
+                    email = "invalid",
+                    password = "admin",
+                )
+
+            this.mockMvc.post("/v1/auth/login") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+
+        /**
+         * Test that an invalid password returns error 403
+         */
+        @Test
+        fun test_login_invalid_password() {
+            val request =
+                LoginRequestDTO(
+                    email = "admin@web.de",
+                    password = "invalid",
+                )
+
+            this.mockMvc.post("/v1/auth/login") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isForbidden() }
+            }
+        }
+
+        /**
+         * Test valid register return 200
+         */
+
+        @Test
+        fun test_register_successful() {
+            val request =
+                RegisterRequestDTO(
+                    password = "Str0ngP455word!",
+                    token = gen_token("init@web.de", true),
+                )
+
+            this.mockMvc.post("/v1/auth/register") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isOk() }
+            }
+        }
+
+        /**
+         * Test invalid token, should return 400
+         */
+        @Test
+        fun test_register_invalid_token() {
+            val request =
+                RegisterRequestDTO(
+                    password = "Str0ngP455word",
+                    token = "12341234",
+                )
+
+            this.mockMvc.post("/v1/auth/register") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        /**
+         * Test invalid token, should return 400
+         */
+        @Test
+        fun test_register_token_alredy_used() {
+            val request =
+                RegisterRequestDTO(
+                    password = "Str0ngP455word!",
+                    token = gen_token("init1@web.de", true),
+                )
+
+            // use token the first time
+            this.mockMvc.post("/v1/auth/register") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isOk() }
+            }
+
+            // use token the first time
+            this.mockMvc.post("/v1/auth/register") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isConflict() }
+            }
+        }
+
+        /**
+         * Test user does not exist, should throw 404
+         */
+        @Test
+        fun test_register_user_does_not_exist() {
+            val request =
+                RegisterRequestDTO(
+                    password = "Str0ngP455word!",
+                    token = gen_token("UserNot@Exist.de", true),
+                )
+            // use token the first time
+            this.mockMvc.post("/v1/auth/register") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isNotFound() }
+            }
+        }
+
+        /**
+         * Test password to weak , should throw 412
+         */
+        @Test
+        fun test_register_password_to_weak() {
+            val request =
+                RegisterRequestDTO(
+                    password = "weakPassword",
+                    token = gen_token("init2@web.de", true),
+                )
+            // use token the first time
+            this.mockMvc.post("/v1/auth/register") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(request)
+            }.andExpect {
+                status { isPreconditionFailed() }
+            }
+        }
+
+        /**
+         * Test if current user is logged in, should return 200
+         */
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_check_login_successful() {
+            this.mockMvc.get("/v1/auth/check-login").andExpect {
+                status { isOk() }
+            }
+        }
+
+        /**
+         * Test if no user is logged in, should return 401
+         */
+        @Test
+        fun test_check_login_not_loggged_in() {
+            this.mockMvc.get("/v1/auth/check-login").andExpect {
+                status { isUnauthorized() }
+            }
+        }
+
+        /**
+         * Test token is valid, should return 200
+         */
+        @Test
+        fun test_check_token_successful() {
+            val token = gen_token("init3@web.de", true)
+            this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
+                status { isOk() }
+            }
+        }
+
+        /**
+         * Test token is invalid, should return 400
+         */
+        @Test
+        fun test_check_token_invalid() {
+            val token = "gen_token1234"
+            this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        /**
+         * Test token is already used, should return 412
+         */
+        @Test
+        fun test_check_token_already_used() {
+            val token = gen_token("admin@web.de", true)
+            this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
+                status { isOk() }
+            }
         }
     }
-
-    /**
-     * Test that an invalid username returns error 403
-     */
-    @Test
-    fun test_login_invalid_username() {
-        val request =
-            LoginRequestDTO(
-                email = "invalid",
-                password = "admin"
-            )
-
-        this.mockMvc.post("/v1/auth/login"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isForbidden() }
-        }
-    }
-
-    /**
-     * Test that an invalid password returns error 403
-     */
-    @Test
-    fun test_login_invalid_password() {
-        val request =
-            LoginRequestDTO(
-                email = "admin@web.de",
-                password = "invalid"
-            )
-
-        this.mockMvc.post("/v1/auth/login"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isForbidden() }
-        }
-    }
-    /**
-     * Test valid register return 200
-     */
-
-    @Test
-    fun test_register_successful() {
-        val request =
-            RegisterRequestDTO(
-                password = "Str0ngP455word!",
-                token = gen_token("init@web.de", true)
-            )
-
-        this.mockMvc.post("/v1/auth/register"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isOk() }
-        }
-    }
-
-    /**
-     * Test invalid token, should return 400
-     */
-    @Test
-    fun test_register_invalid_token() {
-        val request =
-            RegisterRequestDTO(
-                password = "Str0ngP455word",
-                token = "12341234"
-            )
-
-        this.mockMvc.post("/v1/auth/register") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isBadRequest() }
-        }
-    }
-
-    /**
-     * Test invalid token, should return 400
-     */
-    @Test
-    fun test_register_token_alredy_used() {
-        val request =
-            RegisterRequestDTO(
-                password = "Str0ngP455word!",
-                token = gen_token("init1@web.de", true)
-            )
-
-        // use token the first time
-        this.mockMvc.post("/v1/auth/register"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isOk() }
-        }
-
-        // use token the first time
-        this.mockMvc.post("/v1/auth/register"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isConflict() }
-        }
-    }
-
-    /**
-     * Test user does not exist, should throw 404
-     */
-    @Test
-    fun test_register_user_does_not_exist() {
-        val request =
-            RegisterRequestDTO(
-                password = "Str0ngP455word!",
-                token = gen_token("UserNot@Exist.de", true)
-            )
-        // use token the first time
-        this.mockMvc.post("/v1/auth/register"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isNotFound() }
-        }
-    }
-
-    /**
-     * Test password to weak , should throw 412
-     */
-    @Test
-    fun test_register_password_to_weak() {
-        val request =
-            RegisterRequestDTO(
-                password = "weakPassword",
-                token = gen_token("init2@web.de", true)
-            )
-        // use token the first time
-        this.mockMvc.post("/v1/auth/register"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect{
-            status { isPreconditionFailed() }
-        }
-    }
-
-    /**
-     * Test if current user is logged in, should return 200
-     */
-    @Test
-    @WithMockUser(username = "admin", roles = ["ADMIN"])
-    fun test_check_login_successful() {
-        this.mockMvc.get("/v1/auth/check-login").andExpect {
-            status { isOk() }
-        }
-    }
-
-    /**
-     * Test if no user is logged in, should return 401
-     */
-    @Test
-    fun test_check_login_not_loggged_in() {
-        this.mockMvc.get("/v1/auth/check-login").andExpect {
-            status { isUnauthorized() }
-        }
-    }
-
-    /**
-     * Test token is valid, should return 200
-     */
-    @Test
-    fun test_check_token_successful() {
-        val token = gen_token("init3@web.de", true)
-        this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
-            status { isOk() }
-        }
-    }
-
-    /**
-     * Test token is invalid, should return 400
-     */
-    @Test
-    fun test_check_token_invalid() {
-        val token = "gen_token1234"
-        this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
-            status { isBadRequest() }
-        }
-    }
-
-    /**
-     * Test token is already used, should return 412
-     */
-    @Test
-    fun test_check_token_already_used() {
-        val token = gen_token("admin@web.de", true)
-        this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
-            status { isOk() }
-        }
-    }
-
-
-}
