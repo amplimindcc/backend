@@ -2,6 +2,7 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
@@ -30,6 +31,10 @@ class SubmissionService(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     val accessToken = ""
+
+    companion object {
+        private const val DAYS_TILL_DEADLINE: Long = 3L
+    }
 
     /**
      * Adds a new Submission.
@@ -116,10 +121,30 @@ class SubmissionService(
         }
 
         submission.expirationDate = Timestamp.from(Instant.now().plus(DAYS_TILL_DEADLINE, ChronoUnit.DAYS))
+        submission.status = SubmissionStates.IN_IMPLEMENTATION
         this.submissionRepository.save(submission)
     }
 
-    companion object {
-        private const val DAYS_TILL_DEADLINE: Long = 3L
+    fun fetchSubmissionActiveInfo(): SubmissionActiveInfoDTO {
+        val userEmail = UserUtils.fetchLoggedInUser().username
+        val submission =
+            this.submissionRepository.findByUserEmail(userEmail)
+                ?: throw ResourceNotFoundException("Submission with email $userEmail was not found")
+
+        val expirationDate = submission.expirationDate
+
+        if (expirationDate == null || submission.status == SubmissionStates.INIT) {
+            return SubmissionActiveInfoDTO(
+                isStarted = false,
+                isExpired = false,
+                SubmissionStates.INIT,
+            )
+        }
+
+        return SubmissionActiveInfoDTO(
+            isStarted = true,
+            isExpired = expirationDate.before(Timestamp.from(Instant.now())),
+            submission.status,
+        )
     }
 }

@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.controller
 import de.amplimind.codingchallenge.dto.LintResultDTO
 import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.service.GitHubService
 import de.amplimind.codingchallenge.service.SubmissionService
 import io.swagger.v3.oas.annotations.Operation
@@ -37,5 +38,14 @@ class SubmissionController(
         @PathVariable email: String,
     ): ResponseEntity<LintResultDTO> {
         return ResponseEntity.ok(this.gitHubService.getLintingResult(email))
+    }
+
+    @Operation(summary = "Endpoint for fetching the submission active info.")
+    @ApiResponse(responseCode = "200", description = "Get the submission active info")
+    @ApiResponse(responseCode = "401", description = "If this request was made without being logged in (authenticated)")
+    @ApiResponse(responseCode = "404", description = "If there is no submission for the requesting user")
+    @GetMapping("/active")
+    fun fetchSubmissionActiveInfo(): ResponseEntity<SubmissionActiveInfoDTO> {
+        return ResponseEntity.ok(this.submissionService.fetchSubmissionActiveInfo())
     }
 }

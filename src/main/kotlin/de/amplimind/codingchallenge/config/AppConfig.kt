@@ -119,18 +119,14 @@ class AppConfig(
                 Submission(
                     userEmail = user.email,
                     status = SubmissionStates.INIT,
-                    turnInDate = Timestamp(System.currentTimeMillis()),
                     projectID = 1L,
-                    expirationDate = Timestamp(System.currentTimeMillis()),
                 )
 
             val initUserSubmission =
                 Submission(
                     userEmail = initUser.email,
                     status = SubmissionStates.INIT,
-                    turnInDate = Timestamp(System.currentTimeMillis()),
                     projectID = 1L,
-                    expirationDate = Timestamp(System.currentTimeMillis()),
                 )
 
             val inImplementationSubmission =
