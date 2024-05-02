@@ -41,7 +41,7 @@ class GitHubService(
         repoName: String,
     ) = coroutineScope {
         pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, repoName)
-        pushReadme(apiClient, submitSolutionRequestDTO.description, repoName)
+        pushReadme(apiClient, submitSolutionRequestDTO, repoName)
         pushWorkflow(apiClient, repoName)
     }
 
@@ -116,13 +116,19 @@ class GitHubService(
      */
     suspend fun pushReadme(
         apiClient: GitHubApiClient,
-        description: String,
+        submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         repoName: String,
     ): Deferred<ResponseBody> =
         coroutineScope {
             val readmePath = "README.md"
-            val readmeContent = Base64.getEncoder().encodeToString(description.toByteArray())
-            val submissionFileReadme = SubmissionFile("committed by kotlin backend", readmeContent)
+            val file = File(this::class.java.classLoader.getResource("ReadmeTemplate.md").file).readText()
+            val readmeContent = file
+                .replace("\${user}", repoName)
+                .replace("\${language}", submitSolutionRequestDTO.language)
+                .replace("\${version}", submitSolutionRequestDTO.version)
+                .replace("\${description}", submitSolutionRequestDTO.description ?: "")
+            val readmeContentEncoded = Base64.getEncoder().encodeToString(readmeContent.toByteArray())
+            val submissionFileReadme = SubmissionFile("committed by kotlin backend", readmeContentEncoded)
             val req: Deferred<ResponseBody> = async { apiClient.pushFileCall(repoName, readmePath, submissionFileReadme) }
             req.await()
             return@coroutineScope req
