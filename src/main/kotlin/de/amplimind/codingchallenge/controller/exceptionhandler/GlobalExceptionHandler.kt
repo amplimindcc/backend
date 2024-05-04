@@ -5,6 +5,7 @@ import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
 import de.amplimind.codingchallenge.exceptions.PasswordValidationException
 import de.amplimind.codingchallenge.exceptions.ProjectInUseException
+import de.amplimind.codingchallenge.exceptions.RateLimitException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
 import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
@@ -108,5 +109,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyRegisteredException::class)
     fun handleUserAlreadyRegisteredException(ex: UserAlreadyRegisteredException): ResponseEntity<String> {
         return ResponseEntity(ex.message, HttpStatus.CONFLICT)
+    }
+
+    @ExceptionHandler(RateLimitException::class)
+    fun handleRateLimitException(ex: RateLimitException): ResponseEntity<String> {
+        return ResponseEntity(ex.message, HttpStatus.TOO_MANY_REQUESTS)
     }
 }
