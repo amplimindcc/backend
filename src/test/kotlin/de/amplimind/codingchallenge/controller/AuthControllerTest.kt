@@ -110,42 +110,25 @@ internal class AuthControllerTest
             }
         }
 
+        /**
+         * Test valid register return 200
+         */
         @Order(4)
         @Test
-        fun test_login_successful2() {
+        fun test_register_successful() {
             val request =
-                LoginRequestDTO(
-                    email = "admin@web.de",
-                    password = "admin",
+                RegisterRequestDTO(
+                    password = "Str0ngP455word!",
+                    token = gen_token("init@web.de", true),
                 )
 
-            this.mockMvc.post("/v1/auth/login") {
+            this.mockMvc.post("/v1/auth/register") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
                 status { isOk() }
             }
         }
-
-//        /**
-//         * Test valid register return 200
-//         */
-//        @Order(4)
-//        @Test
-//        fun test_register_successful() {
-//            val request =
-//                RegisterRequestDTO(
-//                    password = "Str0ngP455word!",
-//                    token = gen_token("init@web.de", true),
-//                )
-//
-//            this.mockMvc.post("/v1/auth/register") {
-//                contentType = MediaType.APPLICATION_JSON
-//                content = objectMapper.writeValueAsString(request)
-//            }.andExpect {
-//                status { isOk() }
-//            }
-//        }
 
         /**
          * Test invalid token, should return 400
