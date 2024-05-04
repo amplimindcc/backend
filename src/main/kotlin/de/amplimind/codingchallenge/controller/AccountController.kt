@@ -5,11 +5,7 @@ import de.amplimind.codingchallenge.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 /**
  * Controller to handle account related requests
@@ -22,6 +18,7 @@ class AccountController(
     @Operation(summary = "Sends a email to the user with a link to reset the password")
     @ApiResponse(responseCode = "200", description = "Email has been sent. This will always return 200, even if the email does not exist.")
     @ApiResponse(responseCode = "422", description = "Email is not a valid email address")
+    @ApiResponse(responseCode = "404", description = "User does not exist")
     @PostMapping("request-password-change/{email}")
     fun requestPasswordReset(
         @PathVariable email: String,
@@ -33,7 +30,9 @@ class AccountController(
     @Operation(summary = "Changes the password of the user")
     @ApiResponse(responseCode = "200", description = "Password has been changed successfully")
     @ApiResponse(responseCode = "409", description = "Token has already been used")
-    @ApiResponse(responseCode = "422", description = "Token is not valid")
+    @ApiResponse(responseCode = "400", description = "Token is not valid")
+    @ApiResponse(responseCode = "412", description = "Password doesnt fulfill the Requirements")
+    @ApiResponse(responseCode = "403", description = "Token is expired")
     @PostMapping("change-password")
     fun changePassword(
         @RequestBody changePasswordRequestDTO: ChangePasswordRequestDTO,

@@ -295,6 +295,7 @@ class UserService(
      */
     fun requestPasswordChange(email: String) {
         ValidationUtils.validateEmail(email)
+        userRepository.findByEmail(email) ?: throw ResourceNotFoundException("User with email $email was not found")
         val token =
             JWTUtils.createToken(
                 mapOf(JWTUtils.MAIL_KEY to email),
