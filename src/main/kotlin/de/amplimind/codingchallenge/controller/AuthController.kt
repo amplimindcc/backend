@@ -1,5 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
+import de.amplimind.codingchallenge.annotations.WithRateLimit
+import de.amplimind.codingchallenge.aspects.RateLimitAspect
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.dto.response.UserEmailResponseDTO
@@ -14,7 +16,6 @@ import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -27,8 +28,9 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController(
     private val authenticationProvider: AuthenticationProvider,
     private val userService: UserService,
-    private val passwordEncoder: PasswordEncoder,
+    private val rateLimitAspect: RateLimitAspect,
 ) {
+    @WithRateLimit
     @Operation(summary = "Entry point for user login")
     @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
     @ApiResponse(responseCode = "403", description = "username or password is incorrect")
@@ -47,6 +49,7 @@ class AuthController(
 
         SecurityContextHolder.getContext().authentication = authentication
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext())
+        rateLimitAspect.resetCount()
     }
 
     @Operation(summary = "Entry point for invite")

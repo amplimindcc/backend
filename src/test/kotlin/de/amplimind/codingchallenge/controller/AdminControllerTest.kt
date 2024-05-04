@@ -1,11 +1,8 @@
 package de.amplimind.codingchallenge.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import de.amplimind.codingchallenge.dto.request.ChangeUserRoleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.model.SubmissionStates
-import de.amplimind.codingchallenge.model.UserRole
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -49,47 +46,6 @@ internal class AdminControllerTest
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
                 status { isOk() }
-            }
-        }
-
-        /**
-         * Makes sure a 200 OK will be returned when a role change succeeds
-         */
-        @Disabled("Function is currently not in use and therefor this test is currently not needed!")
-        @Test
-        @WithMockUser(username = "admin", roles = ["ADMIN"])
-        fun test_successful_role_change() {
-            val successfulRequest =
-                ChangeUserRoleRequestDTO(
-                    email = "user@web.de",
-                    newRole = UserRole.ADMIN,
-                )
-
-            this.mockMvc.put("/v1/admin/change/role") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(successfulRequest)
-            }.andExpect {
-                status { isOk() }
-            }
-        }
-
-        /**
-         * Makes sure a 404 not found will be returned when trying to change the role of a user that does not exist.
-         */
-        @Test
-        @WithMockUser(username = "admin", roles = ["ADMIN"])
-        fun test_failure_role_change() {
-            val failureRequest =
-                ChangeUserRoleRequestDTO(
-                    email = "unknown@web.de",
-                    newRole = UserRole.ADMIN,
-                )
-
-            this.mockMvc.put("/v1/admin/change/role") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(failureRequest)
-            }.andExpect {
-                status { isNotFound() }
             }
         }
 

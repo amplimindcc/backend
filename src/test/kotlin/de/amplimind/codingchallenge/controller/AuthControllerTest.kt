@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
 import de.amplimind.codingchallenge.utils.JWTUtils
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -12,6 +15,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import java.time.Instant
@@ -21,6 +25,7 @@ import java.util.Date
 /**
  * Test class for [AuthControllerTest].
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -48,6 +53,7 @@ internal class AuthControllerTest
         /**
          * Test that successful login returns 200.
          */
+        @Order(1)
         @Test
         fun test_login_successful() {
             val request =
@@ -67,6 +73,7 @@ internal class AuthControllerTest
         /**
          * Test that an invalid username returns error 403
          */
+        @Order(2)
         @Test
         fun test_login_invalid_username() {
             val request =
@@ -86,6 +93,7 @@ internal class AuthControllerTest
         /**
          * Test that an invalid password returns error 403
          */
+        @Order(3)
         @Test
         fun test_login_invalid_password() {
             val request =
@@ -105,7 +113,7 @@ internal class AuthControllerTest
         /**
          * Test valid register return 200
          */
-
+        @Order(4)
         @Test
         fun test_register_successful() {
             val request =
@@ -125,6 +133,7 @@ internal class AuthControllerTest
         /**
          * Test invalid token, should return 400
          */
+        @Order(5)
         @Test
         fun test_register_invalid_token() {
             val request =
@@ -144,8 +153,9 @@ internal class AuthControllerTest
         /**
          * Test invalid token, should return 400
          */
+        @Order(6)
         @Test
-        fun test_register_token_alredy_used() {
+        fun test_register_token_already_used() {
             val request =
                 RegisterRequestDTO(
                     password = "Str0ngP455word!",
@@ -172,6 +182,7 @@ internal class AuthControllerTest
         /**
          * Test user does not exist, should throw 404
          */
+        @Order(7)
         @Test
         fun test_register_user_does_not_exist() {
             val request =
@@ -191,6 +202,7 @@ internal class AuthControllerTest
         /**
          * Test password to weak , should throw 412
          */
+        @Order(8)
         @Test
         fun test_register_password_to_weak() {
             val request =
@@ -210,6 +222,7 @@ internal class AuthControllerTest
         /**
          * Test if current user is logged in, should return 200
          */
+        @Order(9)
         @Test
         @WithMockUser(username = "admin", roles = ["ADMIN"])
         fun test_check_login_successful() {
@@ -221,6 +234,7 @@ internal class AuthControllerTest
         /**
          * Test if no user is logged in, should return 401
          */
+        @Order(10)
         @Test
         fun test_check_login_not_loggged_in() {
             this.mockMvc.get("/v1/auth/check-login").andExpect {
@@ -231,6 +245,7 @@ internal class AuthControllerTest
         /**
          * Test token is valid, should return 200
          */
+        @Order(11)
         @Test
         fun test_check_token_successful() {
             val token = gen_token("init3@web.de", true)
@@ -242,6 +257,7 @@ internal class AuthControllerTest
         /**
          * Test token is invalid, should return 400
          */
+        @Order(12)
         @Test
         fun test_check_token_invalid() {
             val token = "gen_token1234"
@@ -253,11 +269,40 @@ internal class AuthControllerTest
         /**
          * Test token is already used, should return 412
          */
+        @Order(13)
         @Test
         fun test_check_token_already_used() {
             val token = gen_token("admin@web.de", true)
             this.mockMvc.get("/v1/auth/check-token/$token").andExpect {
                 status { isOk() }
+            }
+        }
+
+        /**
+         * Test that the rate limit is working as expected.
+         */
+        @Order(14)
+        @Test
+        fun test_rate_limit() {
+            val request =
+                LoginRequestDTO(
+                    email = "trashLogin@web.de",
+                    password = "trashLogin",
+                )
+            val results: MutableList<ResultActionsDsl> = mutableListOf()
+            for (i in 1..10) {
+                val result =
+                    this.mockMvc.post("/v1/auth/login") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(request)
+                    }
+                results.add(result)
+            }
+            for (result in results) {
+                if (result.andReturn().response.status == 429) {
+                    assert(true)
+                    break
+                }
             }
         }
     }

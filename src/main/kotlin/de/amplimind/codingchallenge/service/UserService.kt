@@ -2,11 +2,19 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
-import de.amplimind.codingchallenge.dto.*
+import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
+import de.amplimind.codingchallenge.dto.FullUserInfoDTO
+import de.amplimind.codingchallenge.dto.IsAdminDTO
+import de.amplimind.codingchallenge.dto.UserInfoDTO
+import de.amplimind.codingchallenge.dto.UserStatus
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.*
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -31,7 +39,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -50,7 +58,7 @@ class UserService(
     private val resetPasswordTokenStorage: ResetPasswordTokenStorage,
     private val inviteTokenExpirationService: InviteTokenExpirationService,
     @Value("\${app.frontend.url}")
-    private val  SERVER_URL: String? = null
+    private val SERVER_URL: String? = null,
 ) {
     companion object {
         private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
