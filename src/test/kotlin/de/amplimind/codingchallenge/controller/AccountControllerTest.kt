@@ -3,8 +3,17 @@ package de.amplimind.codingchallenge.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
+import de.amplimind.codingchallenge.service.EmailService
 import de.amplimind.codingchallenge.utils.JWTUtils
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.just
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.any
+import org.mockito.Mockito.doNothing
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -24,6 +33,7 @@ import java.util.*
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 internal class AccountControllerTest
+
     @Autowired
     constructor(
         val mackMvc: MockMvc,
@@ -42,6 +52,14 @@ internal class AccountControllerTest
             )
         }
 
+    @MockK
+    private lateinit var emailService: EmailService
+
+    @BeforeEach
+    fun setUp() {
+        MockKAnnotations.init(this)
+    }
+
     /**
      *  Test reset-email is sent when requesting a password change
      */
@@ -49,6 +67,8 @@ internal class AccountControllerTest
     @Test
     @WithMockUser(username = "admin", roles = ["ADMIN"] )
     fun test_password_reset_email_sent_successful(){
+        every { emailService.sendEmail(any(),any(),any()) } just Runs
+
         val email_to_reset_password = "admin@web.de"
         this.mackMvc.post("/v1/account/request-password-change/$email_to_reset_password"){
         }.andExpect {
