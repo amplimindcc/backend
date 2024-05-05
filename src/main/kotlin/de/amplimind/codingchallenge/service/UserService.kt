@@ -2,19 +2,11 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
-import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
-import de.amplimind.codingchallenge.dto.FullUserInfoDTO
-import de.amplimind.codingchallenge.dto.IsAdminDTO
-import de.amplimind.codingchallenge.dto.UserInfoDTO
-import de.amplimind.codingchallenge.dto.UserStatus
+import de.amplimind.codingchallenge.dto.*
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -25,7 +17,6 @@ import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
-import de.amplimind.codingchallenge.utils.JWTUtils.INVITE_LINK_EXPIRATION_DAYS
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
@@ -39,7 +30,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -183,7 +174,7 @@ class UserService(
     fun handleInvite(inviteRequest: InviteRequestDTO): FullUserInfoDTO {
         val user = createUser(inviteRequest)
 
-        sendInviteText(inviteRequest)
+        sendInviteText(inviteRequest, JWTUtils.INVITE_LINK_EXPIRATION_DAYS)
 
         // User should be unregistered at this point since he has not registered yet
         return FullUserInfoDTO(
@@ -373,7 +364,7 @@ class UserService(
             throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
         }
 
-        sendInviteText(inviteRequest)
+        sendInviteText(inviteRequest, JWTUtils.RESEND_INVITE_LINK_EXPIRATION_DAYS)
 
         return FullUserInfoDTO(
             email = inviteRequest.email,
@@ -388,15 +379,15 @@ class UserService(
         return if (isAdmin) MessageConstants.ADMIN_SUBJECT else MessageConstants.USER_SUBJECT
     }
 
-    private fun sendInviteText(inviteRequest: InviteRequestDTO) {
+    private fun sendInviteText(inviteRequest: InviteRequestDTO, expirationTime: Long) {
         val claims = mapOf(JWTUtils.MAIL_KEY to inviteRequest.email, JWTUtils.ADMIN_KEY to inviteRequest.isAdmin)
 
-        val expiration = Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS))
+        val expiration = Date.from(Instant.now().plus(expirationTime, ChronoUnit.DAYS))
         val token =
             JWTUtils.createToken(claims, expiration)
 
         val subject = fetchInviteSubject(inviteRequest.isAdmin)
-        val text = fetchInviteText(token, inviteRequest.isAdmin)
+        val text = fetchInviteText(token, inviteRequest.isAdmin,expirationTime)
 
         this.inviteTokenExpirationService.updateExpirationToken(inviteRequest.email, expiration.time)
 
@@ -406,6 +397,7 @@ class UserService(
     private fun fetchInviteText(
         token: String,
         isAdmin: Boolean,
+        expirationTime: Long
     ): String {
         if (isAdmin) {
             return "<p>Hallo,<br>" +
@@ -415,7 +407,7 @@ class UserService(
                 "<br>" +
                 "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
                 "<br>" +
-                "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b>" +
+                "<b>Der Link läuft nach $expirationTime Tagen ab.</b>" +
                 MessageConstants.EMAIL_SIGNATURE +
                 "</p>"
         }
@@ -427,7 +419,7 @@ class UserService(
             "<br>" +
             "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
             "<br>" +
-            "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
+            "<b>Der Link läuft nach $expirationTime Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
             "können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> " +
             "Zeit ihre Lösung hochzuladen.<br>" +
             MessageConstants.EMAIL_SIGNATURE +
