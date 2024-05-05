@@ -2,6 +2,11 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
+import de.amplimind.codingchallenge.dto.response.DeletedUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.IsAdminResponseDTO
+import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
+import de.amplimind.codingchallenge.model.UserStatus
 import de.amplimind.codingchallenge.dto.*
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
@@ -30,7 +35,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -62,13 +67,13 @@ class UserService(
     private val checkResetPasswordLock = Any()
 
     /**
-     * Fetches all user infos [UserInfoDTO]
+     * Fetches all user infos [UserInfoResponseDTO]
      */
-    fun fetchAllUserInfos(): List<FullUserInfoDTO> {
+    fun fetchAllUserInfos(): List<FullUserInfoResponseDTO> {
         return this.userRepository.findAll().map {
             val userStatus = extractUserStatus(it)
 
-            FullUserInfoDTO(
+            FullUserInfoResponseDTO(
                 email = it.email,
                 isAdmin = it.role.matchesAny(UserRole.ADMIN),
                 status = userStatus,
@@ -88,9 +93,9 @@ class UserService(
 
     // TODO maybe remove later, might not be needed
     @Throws(ResourceNotFoundException::class)
-    fun fetchUserInfosForEmail(email: String): UserInfoDTO {
+    fun fetchUserInfosForEmail(email: String): UserInfoResponseDTO {
         return this.userRepository.findByEmail(email)?.let {
-            return UserInfoDTO(
+            return UserInfoResponseDTO(
                 email = it.email,
                 isAdmin = it.role.matchesAny(UserRole.ADMIN),
                 status = extractUserStatus(it),
@@ -101,9 +106,9 @@ class UserService(
     /**
      * Deletes a user by its email
      * @param email the email of the user to delete
-     * @return the [UserInfoDTO] of the deleted user
+     * @return the [UserInfoResponseDTO] of the deleted user
      */
-    fun deleteUserByEmail(email: String): DeletedUserInfoDTO {
+    fun deleteUserByEmail(email: String): DeletedUserInfoResponseDTO {
         // Check if the user is trying to delete himself
         val auth = SecurityContextHolder.getContext().authentication
         val authenticatedUserEmail = auth?.name
@@ -123,7 +128,7 @@ class UserService(
                 ?: throw ResourceNotFoundException("User with email $email was not found")
         this.userRepository.delete(user)
         this.inviteTokenExpirationService.deleteEntryForUser(email)
-        return DeletedUserInfoDTO(
+        return DeletedUserInfoResponseDTO(
             email = user.email,
             isAdmin = user.role.matchesAny(UserRole.ADMIN),
         )
@@ -171,13 +176,13 @@ class UserService(
      * @param inviteRequest The email of the applicant which should be created and where the email should be sent to and a boolean if user is admin or not
      */
     @Transactional
-    fun handleInvite(inviteRequest: InviteRequestDTO): FullUserInfoDTO {
+    fun handleInvite(inviteRequest: InviteRequestDTO): FullUserInfoResponseDTO {
         val user = createUser(inviteRequest)
 
         sendInviteText(inviteRequest, JWTUtils.INVITE_LINK_EXPIRATION_DAYS)
 
         // User should be unregistered at this point since he has not registered yet
-        return FullUserInfoDTO(
+        return FullUserInfoResponseDTO(
             email = user.email,
             isAdmin = inviteRequest.isAdmin,
             status = UserStatus.UNREGISTERED,
@@ -345,8 +350,8 @@ class UserService(
      * checks if the current user is an admin
      * @return if the current user is an admin
      */
-    fun fetchLoggedInUserAdminStatus(): IsAdminDTO {
-        return IsAdminDTO(fetchUserInfosForEmail(UserUtils.fetchLoggedInUser().username).isAdmin)
+    fun fetchLoggedInUserAdminStatus(): IsAdminResponseDTO {
+        return IsAdminResponseDTO(fetchUserInfosForEmail(UserUtils.fetchLoggedInUser().username).isAdmin)
     }
 
     /**
@@ -354,7 +359,7 @@ class UserService(
      * @param inviteRequest the repeat invite request
      */
     @Transactional
-    fun handleResendInvite(inviteRequest: InviteRequestDTO): FullUserInfoDTO {
+    fun handleResendInvite(inviteRequest: InviteRequestDTO): FullUserInfoResponseDTO {
         val user: User =
             userRepository.findByEmail(inviteRequest.email)
                 ?: throw ResourceNotFoundException("User with email ${inviteRequest.email} was not found")
@@ -366,7 +371,7 @@ class UserService(
 
         sendInviteText(inviteRequest, JWTUtils.RESEND_INVITE_LINK_EXPIRATION_DAYS)
 
-        return FullUserInfoDTO(
+        return FullUserInfoResponseDTO(
             email = inviteRequest.email,
             isAdmin = inviteRequest.isAdmin,
             status = userStatus,

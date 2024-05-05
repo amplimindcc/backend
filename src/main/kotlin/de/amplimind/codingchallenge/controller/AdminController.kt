@@ -1,15 +1,11 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
-import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
-import de.amplimind.codingchallenge.dto.FullUserInfoDTO
-import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
-import de.amplimind.codingchallenge.dto.UserInfoDTO
-import de.amplimind.codingchallenge.dto.UserProjectDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
+import de.amplimind.codingchallenge.dto.response.*
 import de.amplimind.codingchallenge.service.InviteTokenExpirationService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
@@ -18,14 +14,7 @@ import de.amplimind.codingchallenge.utils.ValidationUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 /**
  * Controller for admin related tasks.
@@ -53,7 +42,7 @@ class AdminController(
     @Operation(summary = "Endpoint for fetching all infos for the users")
     @ApiResponse(responseCode = "200", description = "All user infos were fetched successfully.")
     @GetMapping("fetch/users/all")
-    fun fetchAllUsers(): ResponseEntity<List<FullUserInfoDTO>> {
+    fun fetchAllUsers(): ResponseEntity<List<FullUserInfoResponseDTO>> {
         return ResponseEntity.ok(this.userService.fetchAllUserInfos())
     }
 
@@ -64,7 +53,7 @@ class AdminController(
     @GetMapping("fetch/projects/{email}")
     fun fetchUserInfosForEmail(
         @PathVariable email: String,
-    ): ResponseEntity<UserInfoDTO> {
+    ): ResponseEntity<UserInfoResponseDTO> {
         ValidationUtils.validateEmail(email)
         val userInfo = this.userService.fetchUserInfosForEmail(email)
         return ResponseEntity.ok(userInfo)
@@ -77,7 +66,7 @@ class AdminController(
     @DeleteMapping("user/{email}")
     fun deleteUserByEmail(
         @PathVariable email: String,
-    ): ResponseEntity<DeletedUserInfoDTO> {
+    ): ResponseEntity<DeletedUserInfoResponseDTO> {
         ValidationUtils.validateEmail(email)
         val userInfo = this.userService.deleteUserByEmail(email)
         return ResponseEntity.ok(userInfo)
@@ -90,7 +79,7 @@ class AdminController(
     @PostMapping("invite")
     fun createInvite(
         @RequestBody inviteRequest: InviteRequestDTO,
-    ): ResponseEntity<FullUserInfoDTO> {
+    ): ResponseEntity<FullUserInfoResponseDTO> {
         ValidationUtils.validateEmail(inviteRequest.email)
         return ResponseEntity.ok(this.userService.handleInvite(inviteRequest))
     }
@@ -103,7 +92,7 @@ class AdminController(
     @PutMapping("change/submissionstate/reviewed/{email}")
     fun changeSubmissionStateReviewed(
         @PathVariable email: String,
-    ): ResponseEntity<SubmissionInfoDTO> {
+    ): ResponseEntity<SubmissionInfoResponseDTO> {
         ValidationUtils.validateEmail(email)
         return ResponseEntity.ok(this.submissionService.changeSubmissionStateReviewed(email))
     }
@@ -131,7 +120,7 @@ class AdminController(
     @GetMapping("/fetch/project/{email}")
     fun getUserProject(
         @PathVariable email: String,
-    ): ResponseEntity<UserProjectDTO> {
+    ): ResponseEntity<UserProjectResponseDTO> {
         ValidationUtils.validateEmail(email)
         return ResponseEntity.ok(
             this.projectService.fetchProjectById(
@@ -169,7 +158,7 @@ class AdminController(
     @PostMapping("/resend/invite")
     fun resendInvite(
         @RequestBody inviteRequest: InviteRequestDTO,
-    ): ResponseEntity<FullUserInfoDTO> {
+    ): ResponseEntity<FullUserInfoResponseDTO> {
         ValidationUtils.validateEmail(inviteRequest.email)
         return ResponseEntity.ok(userService.handleResendInvite(inviteRequest))
     }

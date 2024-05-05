@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.extensions
 
-import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.model.Submission
 
 /**
@@ -8,11 +8,11 @@ import de.amplimind.codingchallenge.model.Submission
  */
 object DTOExtensions {
     /**
-     * Converts a [Submission] to a [SubmissionInfoDTO]
-     * @return the [SubmissionInfoDTO] with the information of the [Submission]
+     * Converts a [Submission] to a [SubmissionInfoResponseDTO]
+     * @return the [SubmissionInfoResponseDTO] with the information of the [Submission]
      */
     fun Submission.toSumbissionInfoDTO() =
-        SubmissionInfoDTO(
+        SubmissionInfoResponseDTO(
             userEmail = this.userEmail,
             expirationDate = this.expirationDate,
             projectID = this.projectID,

@@ -1,4 +1,4 @@
-package de.amplimind.codingchallenge.dto
+package de.amplimind.codingchallenge.model
 
 /**
  * Enum class for the status of a user

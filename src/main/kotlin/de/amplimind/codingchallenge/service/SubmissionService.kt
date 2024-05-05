@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
@@ -39,9 +39,9 @@ class SubmissionService(
     /**
      * Adds a new Submission.
      * @param submitSolutionRequestDTO the zip file of the code and the description the user sent
-     * @return the [SubmissionInfoDTO] of the updated submission
+     * @return the [SubmissionInfoResponseDTO] of the updated submission
      */
-    fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO): SubmissionInfoDTO {
+    fun submitCode(submitSolutionRequestDTO: SubmitSolutionRequestDTO): SubmissionInfoResponseDTO {
         val userEmail = UserUtils.fetchLoggedInUser().username
         val submission =
             this.submissionRepository.findByUserEmail(userEmail)
@@ -83,9 +83,9 @@ class SubmissionService(
     /**
      * Changes the submission state to 'reviewed'.
      * @param email the email of the user which will be used to find the submission
-     * @return the [SubmissionInfoDTO] of the updated submission
+     * @return the [SubmissionInfoResponseDTO] of the updated submission
      */
-    fun changeSubmissionStateReviewed(email: String): SubmissionInfoDTO {
+    fun changeSubmissionStateReviewed(email: String): SubmissionInfoResponseDTO {
         val submission =
             this.submissionRepository.findByUserEmail(email)
                 ?: throw ResourceNotFoundException("If the submission for the provided $email was not found.")

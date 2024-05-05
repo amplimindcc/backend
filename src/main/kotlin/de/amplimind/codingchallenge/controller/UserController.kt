@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.controller
 
-import de.amplimind.codingchallenge.dto.IsAdminDTO
+import de.amplimind.codingchallenge.dto.response.IsAdminResponseDTO
 import de.amplimind.codingchallenge.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -18,7 +18,7 @@ class UserController(private val userService: UserService) {
     @Operation(summary = "Entry point to check if a user is an admin")
     @ApiResponse(responseCode = "200", description = "Successfully received the result if the user is an admin")
     @GetMapping("/check-admin")
-    fun requestIsAdmin(): ResponseEntity<IsAdminDTO> {
+    fun requestIsAdmin(): ResponseEntity<IsAdminResponseDTO> {
         return ResponseEntity.ok(userService.fetchLoggedInUserAdminStatus())
     }
 }

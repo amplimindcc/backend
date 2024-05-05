@@ -1,7 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
-import de.amplimind.codingchallenge.dto.LintResultDTO
-import de.amplimind.codingchallenge.dto.SubmissionInfoDTO
+import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.service.GitHubService
@@ -27,7 +27,7 @@ class SubmissionController(
     @PostMapping("/submit")
     fun submit(
         @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO,
-    ): ResponseEntity<SubmissionInfoDTO> {
+    ): ResponseEntity<SubmissionInfoResponseDTO> {
         return ResponseEntity.ok(this.submissionService.submitCode(submitSolutionRequestDTO))
     }
 
@@ -36,7 +36,7 @@ class SubmissionController(
     @GetMapping("/lint/{email}")
     fun submit(
         @PathVariable email: String,
-    ): ResponseEntity<LintResultDTO> {
+    ): ResponseEntity<LintResultResponseDTO> {
         return ResponseEntity.ok(this.gitHubService.getLintingResult(email))
     }
 
