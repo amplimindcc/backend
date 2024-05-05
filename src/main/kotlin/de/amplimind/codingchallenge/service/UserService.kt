@@ -17,7 +17,6 @@ import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.storage.ResetPasswordTokenStorage
 import de.amplimind.codingchallenge.utils.JWTUtils
-import de.amplimind.codingchallenge.utils.JWTUtils.INVITE_LINK_EXPIRATION_DAYS
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ValidationUtils
 import jakarta.servlet.http.HttpSession
@@ -388,7 +387,7 @@ class UserService(
             JWTUtils.createToken(claims, expiration)
 
         val subject = fetchInviteSubject(inviteRequest.isAdmin)
-        val text = fetchInviteText(token, inviteRequest.isAdmin)
+        val text = fetchInviteText(token, inviteRequest.isAdmin,expirationTime)
 
         this.inviteTokenExpirationService.updateExpirationToken(inviteRequest.email, expiration.time)
 
@@ -398,6 +397,7 @@ class UserService(
     private fun fetchInviteText(
         token: String,
         isAdmin: Boolean,
+        expirationTime: Long
     ): String {
         if (isAdmin) {
             return "<p>Hallo,<br>" +
@@ -407,7 +407,7 @@ class UserService(
                 "<br>" +
                 "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
                 "<br>" +
-                "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b>" +
+                "<b>Der Link läuft nach $expirationTime Tagen ab.</b>" +
                 MessageConstants.EMAIL_SIGNATURE +
                 "</p>"
         }
@@ -419,7 +419,7 @@ class UserService(
             "<br>" +
             "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
             "<br>" +
-            "<b>Der Link läuft nach $INVITE_LINK_EXPIRATION_DAYS Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
+            "<b>Der Link läuft nach $expirationTime Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
             "können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> " +
             "Zeit ihre Lösung hochzuladen.<br>" +
             MessageConstants.EMAIL_SIGNATURE +
