@@ -2,19 +2,11 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
-import de.amplimind.codingchallenge.dto.DeletedUserInfoDTO
-import de.amplimind.codingchallenge.dto.FullUserInfoDTO
-import de.amplimind.codingchallenge.dto.IsAdminDTO
-import de.amplimind.codingchallenge.dto.UserInfoDTO
-import de.amplimind.codingchallenge.dto.UserStatus
+import de.amplimind.codingchallenge.dto.*
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
-import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
-import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
-import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.*
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -39,7 +31,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.Date
+import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -183,7 +175,7 @@ class UserService(
     fun handleInvite(inviteRequest: InviteRequestDTO): FullUserInfoDTO {
         val user = createUser(inviteRequest)
 
-        sendInviteText(inviteRequest)
+        sendInviteText(inviteRequest, JWTUtils.INVITE_LINK_EXPIRATION_DAYS)
 
         // User should be unregistered at this point since he has not registered yet
         return FullUserInfoDTO(
@@ -373,7 +365,7 @@ class UserService(
             throw UserAlreadyRegisteredException("User with email ${inviteRequest.email} is already registered")
         }
 
-        sendInviteText(inviteRequest)
+        sendInviteText(inviteRequest, JWTUtils.RESEND_INVITE_LINK_EXPIRATION_DAYS)
 
         return FullUserInfoDTO(
             email = inviteRequest.email,
@@ -388,10 +380,10 @@ class UserService(
         return if (isAdmin) MessageConstants.ADMIN_SUBJECT else MessageConstants.USER_SUBJECT
     }
 
-    private fun sendInviteText(inviteRequest: InviteRequestDTO) {
+    private fun sendInviteText(inviteRequest: InviteRequestDTO, expirationTime: Long) {
         val claims = mapOf(JWTUtils.MAIL_KEY to inviteRequest.email, JWTUtils.ADMIN_KEY to inviteRequest.isAdmin)
 
-        val expiration = Date.from(Instant.now().plus(INVITE_LINK_EXPIRATION_DAYS, ChronoUnit.DAYS))
+        val expiration = Date.from(Instant.now().plus(expirationTime, ChronoUnit.DAYS))
         val token =
             JWTUtils.createToken(claims, expiration)
 
