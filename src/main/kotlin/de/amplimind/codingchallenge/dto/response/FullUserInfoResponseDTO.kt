@@ -1,4 +1,6 @@
-package de.amplimind.codingchallenge.dto
+package de.amplimind.codingchallenge.dto.response
+
+import de.amplimind.codingchallenge.model.UserStatus
 
 /**
  * Data transfer object for the full user information
@@ -8,7 +10,7 @@ package de.amplimind.codingchallenge.dto
  * @param canBeReinvited if the user can be reinvited
  * @param inviteTokenExpiration the expiration date of the user`s invite token (dd.MM.yyyy hh:mm)
  */
-data class FullUserInfoDTO(
+data class FullUserInfoResponseDTO(
     val email: String,
     val isAdmin: Boolean,
     val status: UserStatus,

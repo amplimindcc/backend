@@ -1,4 +1,4 @@
-package de.amplimind.codingchallenge.dto
+package de.amplimind.codingchallenge.dto.response
 
 import de.amplimind.codingchallenge.model.SubmissionStates
 import java.sql.Timestamp
@@ -11,7 +11,7 @@ import java.sql.Timestamp
  * @param turnInDate the date when the submission was turned in
  * @param status the status of the submission
  */
-data class SubmissionInfoDTO(
+data class SubmissionInfoResponseDTO(
     val userEmail: String,
     val expirationDate: Timestamp?,
     val projectID: Long,

@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.controller
 
-import de.amplimind.codingchallenge.dto.UserProjectDTO
+import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
 import de.amplimind.codingchallenge.utils.UserUtils
@@ -22,7 +22,7 @@ class ProjectController(
     @ApiResponse(responseCode = "404", description = "User does not have a project assigned")
     @ApiResponse(responseCode = "422", description = "Supplied email is not an email")
     @GetMapping("/fetch")
-    fun getUserProject(): ResponseEntity<UserProjectDTO> {
+    fun getUserProject(): ResponseEntity<UserProjectResponseDTO> {
         val email: String = UserUtils.fetchLoggedInUser().username
         this.submissionService.setExpirationIfNotSet(email)
         return ResponseEntity.ok(

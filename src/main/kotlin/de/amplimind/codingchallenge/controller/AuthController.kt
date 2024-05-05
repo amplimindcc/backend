@@ -4,7 +4,7 @@ import de.amplimind.codingchallenge.annotations.WithRateLimit
 import de.amplimind.codingchallenge.aspects.RateLimitAspect
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
-import de.amplimind.codingchallenge.dto.response.UserEmailResponseDTO
+import de.amplimind.codingchallenge.dto.response.UserEmailResponseResponseDTO
 import de.amplimind.codingchallenge.service.UserService
 import de.amplimind.codingchallenge.utils.JWTUtils
 import io.swagger.v3.oas.annotations.Operation
@@ -71,13 +71,13 @@ class AuthController(
     @ApiResponse(responseCode = "200", description = "User is logged in, and the email of the user is provided")
     @ApiResponse(responseCode = "401", description = "User is not logged in")
     @GetMapping("/check-login")
-    fun checkLogin(): ResponseEntity<UserEmailResponseDTO> {
+    fun checkLogin(): ResponseEntity<UserEmailResponseResponseDTO> {
         val isAuthenticated =
             SecurityContextHolder.getContext().authentication != null &&
                 "anonymousUser" != SecurityContextHolder.getContext().authentication.name
 
         if (isAuthenticated) {
-            return ResponseEntity.ok(UserEmailResponseDTO(SecurityContextHolder.getContext().authentication.name))
+            return ResponseEntity.ok(UserEmailResponseResponseDTO(SecurityContextHolder.getContext().authentication.name))
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()

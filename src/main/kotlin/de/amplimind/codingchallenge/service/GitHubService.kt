@@ -1,6 +1,6 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.LintResultDTO
+import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.exceptions.TriggerWorkflowException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
@@ -176,9 +176,9 @@ class GitHubService(
     /**
      * Get the result of the linting workflow.
      * @param userEmail the email of the user who made the submission
-     * @return the [LintResultDTO] of the submission repository
+     * @return the [LintResultResponseDTO] of the submission repository
      */
-    fun getLintingResult(userEmail: String): LintResultDTO {
-        return LintResultDTO("")
+    fun getLintingResult(userEmail: String): LintResultResponseDTO {
+        return LintResultResponseDTO("")
     }
 }
