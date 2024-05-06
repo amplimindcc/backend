@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import retrofit2.Response
 import java.io.File
+import java.net.URI
 import java.util.Base64
 
 @Service
@@ -121,7 +122,7 @@ class GitHubService(
     ): Deferred<ResponseBody> =
         coroutineScope {
             val readmePath = "README.md"
-            val file = File(this::class.java.classLoader.getResource("ReadmeTemplate.md").file).readText()
+            val file = File(URI(this::class.java.classLoader.getResource("ReadmeTemplate.md").toString())).readText()
             val readmeContent =
                 file
                     .replace("\${user}", repoName)
