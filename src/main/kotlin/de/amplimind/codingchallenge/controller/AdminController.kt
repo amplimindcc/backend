@@ -50,7 +50,7 @@ class AdminController(
     @ApiResponse(responseCode = "200", description = "User info was fetched successfully.")
     @ApiResponse(responseCode = "404", description = "User with email was not found.")
     @ApiResponse(responseCode = "422", description = "Email supplied is not an email.")
-    @GetMapping("fetch/projects/{email}")
+    @GetMapping("fetch/user/{email}")
     fun fetchUserInfosForEmail(
         @PathVariable email: String,
     ): ResponseEntity<UserInfoResponseDTO> {
