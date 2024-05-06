@@ -1,9 +1,9 @@
 package de.amplimind.codingchallenge.controller
 
-import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
-import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.service.GitHubService
 import de.amplimind.codingchallenge.service.SubmissionService
 import io.swagger.v3.oas.annotations.Operation
@@ -24,6 +24,10 @@ class SubmissionController(
 ) {
     @Operation(summary = "Endpoint for submitting a solution.")
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
+    @ApiResponse(
+        responseCode = "400",
+        description = "The submission was flagged as a zip bomb as it has a nested zip file or being too large.",
+    )
     @PostMapping("/submit")
     fun submit(
         @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO,

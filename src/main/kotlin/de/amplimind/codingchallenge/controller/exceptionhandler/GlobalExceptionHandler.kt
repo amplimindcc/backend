@@ -15,6 +15,7 @@ import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.ZipBombException
 import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -114,5 +115,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(RateLimitException::class)
     fun handleRateLimitException(ex: RateLimitException): ResponseEntity<String> {
         return ResponseEntity(ex.message, HttpStatus.TOO_MANY_REQUESTS)
+    }
+
+    @ExceptionHandler(ZipBombException::class)
+    fun handleZipBombException(ex: ZipBombException): ResponseEntity<String> {
+        return ResponseEntity("Zip Bomb detected: ${ex.message}", HttpStatus.BAD_REQUEST)
     }
 }

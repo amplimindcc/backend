@@ -2,21 +2,21 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
-import de.amplimind.codingchallenge.dto.response.DeletedUserInfoResponseDTO
-import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
-import de.amplimind.codingchallenge.dto.response.IsAdminResponseDTO
-import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
-import de.amplimind.codingchallenge.model.UserStatus
 import de.amplimind.codingchallenge.dto.*
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
+import de.amplimind.codingchallenge.dto.response.DeletedUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.IsAdminResponseDTO
+import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
 import de.amplimind.codingchallenge.exceptions.*
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.model.User
 import de.amplimind.codingchallenge.model.UserRole
+import de.amplimind.codingchallenge.model.UserStatus
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
@@ -384,7 +384,10 @@ class UserService(
         return if (isAdmin) MessageConstants.ADMIN_SUBJECT else MessageConstants.USER_SUBJECT
     }
 
-    private fun sendInviteText(inviteRequest: InviteRequestDTO, expirationTime: Long) {
+    private fun sendInviteText(
+        inviteRequest: InviteRequestDTO,
+        expirationTime: Long,
+    ) {
         val claims = mapOf(JWTUtils.MAIL_KEY to inviteRequest.email, JWTUtils.ADMIN_KEY to inviteRequest.isAdmin)
 
         val expiration = Date.from(Instant.now().plus(expirationTime, ChronoUnit.DAYS))
@@ -392,7 +395,7 @@ class UserService(
             JWTUtils.createToken(claims, expiration)
 
         val subject = fetchInviteSubject(inviteRequest.isAdmin)
-        val text = fetchInviteText(token, inviteRequest.isAdmin,expirationTime)
+        val text = fetchInviteText(token, inviteRequest.isAdmin, expirationTime)
 
         this.inviteTokenExpirationService.updateExpirationToken(inviteRequest.email, expiration.time)
 
@@ -402,7 +405,7 @@ class UserService(
     private fun fetchInviteText(
         token: String,
         isAdmin: Boolean,
-        expirationTime: Long
+        expirationTime: Long,
     ): String {
         if (isAdmin) {
             return "<p>Hallo,<br>" +

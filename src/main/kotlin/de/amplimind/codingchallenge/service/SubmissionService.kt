@@ -1,8 +1,8 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException

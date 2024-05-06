@@ -1,9 +1,9 @@
 package de.amplimind.codingchallenge.service
 
-import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
+import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
 import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Project
