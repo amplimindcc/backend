@@ -173,4 +173,11 @@ class AdminController(
         val expirationDate = inviteTokenExpirationService.fetchExpirationDateForUser(email)
         return ResponseEntity.ok(expirationDate)
     }
+
+    @Operation(summary = "Fetches all submissions")
+    @ApiResponse(responseCode = "200", description = "All submissions fetched successfully")
+    @GetMapping("/submission/all")
+    fun fetchAllSubmissions(): ResponseEntity<List<SubmissionInfoResponseDTO>> {
+        return ResponseEntity.ok(submissionService.fetchAllSubmissions())
+    }
 }

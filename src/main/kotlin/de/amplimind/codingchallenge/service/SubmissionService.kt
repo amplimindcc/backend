@@ -147,4 +147,8 @@ class SubmissionService(
             submission.status,
         )
     }
+
+    fun fetchAllSubmissions(): List<SubmissionInfoResponseDTO> {
+        return this.submissionRepository.findAll().map { it.toSumbissionInfoDTO() }
+    }
 }
