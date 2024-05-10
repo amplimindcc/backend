@@ -2,6 +2,9 @@ package de.amplimind.codingchallenge.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
+import de.amplimind.codingchallenge.repository.ProjectRepository
+import de.amplimind.codingchallenge.repository.SubmissionRepository
+import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.service.EmailService
 import de.amplimind.codingchallenge.utils.JWTUtils
 import io.mockk.MockKAnnotations
@@ -15,10 +18,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
+import utils.TestDataInitializer
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Date
@@ -34,6 +39,9 @@ internal class AccountControllerTest
     constructor(
         val mackMvc: MockMvc,
         val objectMapper: ObjectMapper,
+        private val userRepository: UserRepository,
+        private val submissionRepository: SubmissionRepository,
+        private val projectRepository: ProjectRepository,
     ) {
         fun gen_token(email: String): String {
             return JWTUtils.createToken(
@@ -53,6 +61,9 @@ internal class AccountControllerTest
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
+            TestDataInitializer(
+                userRepository,submissionRepository,projectRepository
+            ).initTestData()
         }
 
         /**

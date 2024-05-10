@@ -3,7 +3,11 @@ package de.amplimind.codingchallenge.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.amplimind.codingchallenge.dto.request.LoginRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
+import de.amplimind.codingchallenge.repository.ProjectRepository
+import de.amplimind.codingchallenge.repository.SubmissionRepository
+import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.utils.JWTUtils
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
@@ -18,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import utils.TestDataInitializer
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Date
@@ -34,6 +39,9 @@ internal class AuthControllerTest
     constructor(
         val mockMvc: MockMvc,
         val objectMapper: ObjectMapper,
+        private val userRepository: UserRepository,
+        private val submissionRepository: SubmissionRepository,
+        private val projectRepository: ProjectRepository,
     ) {
         fun gen_token(
             email: String,
@@ -49,6 +57,13 @@ internal class AuthControllerTest
                 ),
             )
         }
+
+    @BeforeEach
+    fun setUp() {
+        TestDataInitializer(
+            userRepository,submissionRepository,projectRepository
+        ).initTestData()
+    }
 
         /**
          * Test that successful login returns 200.

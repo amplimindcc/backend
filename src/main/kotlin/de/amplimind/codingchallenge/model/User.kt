@@ -9,6 +9,9 @@ import org.springframework.data.annotation.Version
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
+/**
+ * Entity which represents a user of this platform
+ */
 @Entity
 @Table(name = "users")
 class User(
