@@ -8,6 +8,9 @@ import jakarta.persistence.Table
 import org.springframework.data.annotation.Version
 import java.sql.Timestamp
 
+/**
+ * Entity which represents a submission of a user
+ */
 @Entity
 @Table(name = "submissions")
 class Submission(

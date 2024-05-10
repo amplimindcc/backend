@@ -67,15 +67,6 @@ internal class UserServiceTest {
         MockKAnnotations.init(this)
     }
 
-    companion object {
-        val adminUser =
-            User(
-                email = "adminUser@web.de",
-                password = "password",
-                role = UserRole.ADMIN,
-            )
-    }
-
     /**
      * Test a successful fetch of all stored user infos
      */
