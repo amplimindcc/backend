@@ -5,7 +5,11 @@ import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequest
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
-import de.amplimind.codingchallenge.dto.response.*
+import de.amplimind.codingchallenge.dto.response.DeletedUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
 import de.amplimind.codingchallenge.service.InviteTokenExpirationService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
@@ -14,7 +18,14 @@ import de.amplimind.codingchallenge.utils.ValidationUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 /**
  * Controller for admin related tasks.

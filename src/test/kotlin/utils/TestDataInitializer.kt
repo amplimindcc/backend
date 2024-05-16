@@ -26,7 +26,6 @@ class TestDataInitializer(
     private val passwordEncoder: BCryptPasswordEncoder = BCryptPasswordEncoder(),
     private val jdbcTemplate: JdbcTemplate? = null,
 ) {
-
     fun initTestData() {
         reset()
         init()
@@ -41,7 +40,6 @@ class TestDataInitializer(
     }
 
     private fun init() {
-
         val admin =
             User(
                 email = "admin@web.de",
@@ -139,7 +137,7 @@ class TestDataInitializer(
                 title = "Test Project",
                 description = "This is a test description",
                 active = true,
-                id = 1L
+                id = 1L,
             )
 
         val project2 =
@@ -147,7 +145,7 @@ class TestDataInitializer(
                 title = "Test Project 2",
                 description = "This is a test description",
                 active = false,
-                id = 2L
+                id = 2L,
             )
 
         this.projectRepository.saveAll(listOf(project1, project2))

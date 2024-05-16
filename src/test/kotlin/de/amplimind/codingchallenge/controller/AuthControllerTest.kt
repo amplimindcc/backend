@@ -58,12 +58,14 @@ internal class AuthControllerTest
             )
         }
 
-    @BeforeEach
-    fun setUp() {
-        TestDataInitializer(
-            userRepository,submissionRepository,projectRepository
-        ).initTestData()
-    }
+        @BeforeEach
+        fun setUp() {
+            TestDataInitializer(
+                userRepository,
+                submissionRepository,
+                projectRepository,
+            ).initTestData()
+        }
 
         /**
          * Test that successful login returns 200.

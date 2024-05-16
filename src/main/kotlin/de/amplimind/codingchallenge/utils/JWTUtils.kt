@@ -6,7 +6,7 @@ import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.AeadAlgorithm
 import java.time.Instant
-import java.util.*
+import java.util.Date
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 

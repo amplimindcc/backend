@@ -2,7 +2,6 @@ package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.constants.AppConstants
 import de.amplimind.codingchallenge.constants.MessageConstants
-import de.amplimind.codingchallenge.dto.*
 import de.amplimind.codingchallenge.dto.request.ChangePasswordRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.request.RegisterRequestDTO
@@ -10,7 +9,12 @@ import de.amplimind.codingchallenge.dto.response.DeletedUserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.IsAdminResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
-import de.amplimind.codingchallenge.exceptions.*
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
