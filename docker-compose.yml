@@ -18,12 +18,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
 
-  app:
-    build: ./
-    container_name: backend
-    volumes:
-      - ./:/backend
-    ports:
-      - 8080:8080
-    expose:
-      - 8080
+#  app:
+#    build: ./
+#    container_name: backend
+#    volumes:
+#      - ./:/backend
+#    ports:
+#      - 8080:8080
+#    expose:
+#      - 8080
