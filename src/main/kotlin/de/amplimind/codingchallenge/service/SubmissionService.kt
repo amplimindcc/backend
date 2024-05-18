@@ -5,6 +5,7 @@ import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
+import de.amplimind.codingchallenge.exceptions.SubmissionException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.extensions.DTOExtensions.toSumbissionInfoDTO
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
@@ -13,6 +14,7 @@ import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.createGitHubApiClient
 import de.amplimind.codingchallenge.utils.UserUtils
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -68,8 +70,13 @@ class SubmissionService(
             } else {
                 gitHubService.createRepo(gitHubApiClient, repoName)
             }
-            gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
-            gitHubService.triggerWorkflow(gitHubApiClient, repoName)
+            try {
+                gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
+                gitHubService.triggerLintingWorkflow(gitHubApiClient, repoName)
+            } catch (e: Exception) {
+                gitHubService.deleteSubmissionRepository(gitHubApiClient, repoName)
+                throw SubmissionException("Submission failed: ${e.message}")
+            }
         }
 
         submission.turnInDate = newTurnInDate

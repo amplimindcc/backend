@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.submission
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,10 +13,12 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import org.slf4j.LoggerFactory
 
 interface GitHubApiClient {
     @PUT("repos/amplimindcc/{repoName}/contents/{filePath}")
@@ -23,26 +26,33 @@ interface GitHubApiClient {
         @Path("repoName") repoName: String,
         @Path("filePath") filePath: String,
         @Body submissionFile: SubmissionFile,
-    ): ResponseBody
+    ): Response<PushFileResponse>
 
     @POST("orgs/{org}/repos")
     suspend fun createSubmissionRepository(
         @Path("org") org: String,
         @Body submissionRepository: SubmissionGitHubRepository,
-    ): ResponseBody
+    ): Response<CreateRepoResponse>
 
     @POST("repos/amplimindcc/{repoName}/actions/workflows/{workflowName}/dispatches")
     suspend fun triggerWorkflow(
         @Path("repoName") repoName: String,
         @Path("workflowName") workflowName: String,
         @Body workflowDispatch: WorkflowDispatch,
-    ): Response<Unit>
+    ): Response<Void>
 
     @GET("repos/amplimindcc/{repoName}")
     fun getSubmissionRepository(
         @Path("repoName") repoName: String,
     ): Call<Result<String>>
+
+    @DELETE("repos/amplimindcc/{repoName}")
+    suspend fun deleteRepository(
+        @Path("repoName") repoName: String
+    ): Response<Void>
 }
+
+// Requests
 
 @Serializable
 data class SubmissionFile(
@@ -59,6 +69,19 @@ data class SubmissionGitHubRepository(
 @Serializable
 data class WorkflowDispatch(
     val ref: String,
+)
+
+// Responses
+
+@Serializable
+data class PushFileResponse(
+    val name: String,
+)
+
+@Serializable
+data class CreateRepoResponse(
+    val id: Int,
+    val name: String
 )
 
 fun createGitHubApiClient(accessToken: String): GitHubApiClient {
