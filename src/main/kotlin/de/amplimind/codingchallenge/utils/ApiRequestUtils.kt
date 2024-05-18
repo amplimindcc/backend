@@ -1,10 +1,7 @@
 package de.amplimind.codingchallenge.utils
 
 import de.amplimind.codingchallenge.exceptions.RetryMethodException
-import de.amplimind.codingchallenge.exceptions.SubmissionException
-import de.amplimind.codingchallenge.submission.PushFileResponse
 import kotlinx.coroutines.delay
-import okhttp3.ResponseBody
 import retrofit2.Response
 
 /**

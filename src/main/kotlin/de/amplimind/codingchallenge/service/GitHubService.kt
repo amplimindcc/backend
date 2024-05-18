@@ -9,7 +9,6 @@ import de.amplimind.codingchallenge.utils.ZipUtils
 import de.amplimind.codingchallenge.utils.ApiRequestUtils
 import de.amplimind.codingchallenge.utils.SubmissionUtils
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
