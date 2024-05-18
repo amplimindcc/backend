@@ -23,23 +23,6 @@ class GitHubService(
 
     // TODO: optimize requests
 
-    private suspend fun <T> retry(
-        retries: Int,
-        method: suspend () -> T
-    ): T {
-        repeat(retries - 1) {
-            println("try")
-            try {
-                return method()
-            } catch (e: Exception) {
-                println("error caught in retry")
-                delay(500)
-            }
-        }
-
-        return method()
-    }
-
     /**
      * Upload the code to the Repository.
      * @param apiClient the client for GitHub api alls
