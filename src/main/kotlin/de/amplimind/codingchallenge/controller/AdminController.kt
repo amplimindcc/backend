@@ -10,6 +10,7 @@ import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
+import de.amplimind.codingchallenge.listener.SubmissionStatusChangedListener
 import de.amplimind.codingchallenge.service.InviteTokenExpirationService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
 /**
  * Controller for admin related tasks.
@@ -37,6 +39,7 @@ class AdminController(
     private val userService: UserService,
     private val submissionService: SubmissionService,
     private val inviteTokenExpirationService: InviteTokenExpirationService,
+    private val submissionStatusChangedListener: SubmissionStatusChangedListener,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
@@ -190,5 +193,17 @@ class AdminController(
     @GetMapping("/submission/all")
     fun fetchAllSubmissions(): ResponseEntity<List<SubmissionInfoResponseDTO>> {
         return ResponseEntity.ok(submissionService.fetchAllSubmissions())
+    }
+
+    @Operation(
+        summary =
+            "Subscribe to submission status." +
+                " Will return a server sent event with the submission which submission-status was changed .",
+    )
+    @ApiResponse(responseCode = "200", description = "Connection to the server has been made successfully.")
+    @GetMapping("submission/status/subscribe")
+    fun subscribeToSubmissionStatus(): SseEmitter {
+        val sseEmitter = SseEmitter(300000)
+        return this.submissionStatusChangedListener.addEmitter(sseEmitter)
     }
 }

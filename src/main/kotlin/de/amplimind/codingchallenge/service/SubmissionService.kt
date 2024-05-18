@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
+import de.amplimind.codingchallenge.events.SubmissionStatusChangedEvent
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
@@ -15,6 +16,7 @@ import de.amplimind.codingchallenge.submission.createGitHubApiClient
 import de.amplimind.codingchallenge.utils.UserUtils
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.sql.Timestamp
 import java.time.Instant
@@ -28,6 +30,7 @@ import java.util.concurrent.TimeUnit
 class SubmissionService(
     private val submissionRepository: SubmissionRepository,
     private val gitHubService: GitHubService,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     val accessToken = ""
@@ -77,6 +80,8 @@ class SubmissionService(
 
         this.submissionRepository.save(submission)
 
+        this.eventPublisher.publishEvent(SubmissionStatusChangedEvent(submission))
+
         return submission.toSumbissionInfoDTO()
     }
 
@@ -97,7 +102,7 @@ class SubmissionService(
         submission.status = SubmissionStates.REVIEWED
 
         this.submissionRepository.save(submission)
-
+        this.eventPublisher.publishEvent(SubmissionStatusChangedEvent(submission))
         return submission.toSumbissionInfoDTO()
     }
 
@@ -123,6 +128,7 @@ class SubmissionService(
         submission.expirationDate = Timestamp.from(Instant.now().plus(DAYS_TILL_DEADLINE, ChronoUnit.DAYS))
         submission.status = SubmissionStates.IN_IMPLEMENTATION
         this.submissionRepository.save(submission)
+        this.eventPublisher.publishEvent(SubmissionStatusChangedEvent(submission))
     }
 
     fun fetchSubmissionActiveInfo(): SubmissionActiveInfoDTO {
