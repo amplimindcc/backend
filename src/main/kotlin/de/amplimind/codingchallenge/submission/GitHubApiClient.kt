@@ -55,6 +55,13 @@ interface GitHubApiClient {
 data class SubmissionFile(
     val message: String,
     val content: String,
+    val committer: Committer
+)
+
+@Serializable
+data class Committer(
+    val name: String,
+    val email: String
 )
 
 @Serializable
