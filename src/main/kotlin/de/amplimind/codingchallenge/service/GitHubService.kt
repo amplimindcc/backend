@@ -33,7 +33,6 @@ class GitHubService(
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
     ) = coroutineScope {
-        logger.info("pushToRepo.call")
         pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, userEmail)
         pushReadme(apiClient, submitSolutionRequestDTO, userEmail)
         pushWorkflow(apiClient, userEmail)
@@ -42,7 +41,7 @@ class GitHubService(
     /**
      * Create the GitHub submission repository.
      * @param apiClient the client for GitHub api calls
-     * @param userEmail the owner and name of the repo
+     * @param userEmail the email of the user who made the submission
      * @return the [Response<CreateRepoResponse>] of the GitHub api call
      */
     suspend fun createRepo(
@@ -50,7 +49,6 @@ class GitHubService(
         userEmail: String
     ): Response<CreateRepoResponse> =
         coroutineScope {
-            logger.info("createRepo.call")
             val organisation = "amplimindcc"
             val description = "This is the submission repository of $userEmail"
             val repoName = userEmail.replace('@', '.')
@@ -68,7 +66,7 @@ class GitHubService(
      * Push the code to the GitHub repository.
      * @param apiClient the client for GitHub api calls
      * @param multipartFile the code to push
-     * @param userEmail the owner and name of the repo
+     * @param userEmail the email of the user who made the submission
      * @return the [List<Response<PushFileResponse>>] of the GitHub api calls
      */
     suspend fun pushCode(
@@ -77,7 +75,6 @@ class GitHubService(
         userEmail: String,
     ): List<Response<PushFileResponse>> =
         coroutineScope {
-            logger.info("pushCode.call")
             val req: List<Response<PushFileResponse>> =
                 ZipUtils.unzipCode(multipartFile).map { entry ->
                     val filePath = entry.key.substringAfter("/")
@@ -98,7 +95,7 @@ class GitHubService(
     /**
      * Push the linting workflow to the GitHub repository.
      * @param apiClient the client for GitHub api calls
-     * @param userEmail the owner and name of the repo
+     * @param userEmail the email of the user who made the submission
      * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushWorkflow(
@@ -106,7 +103,6 @@ class GitHubService(
         userEmail: String,
     ): Response<PushFileResponse> =
         coroutineScope {
-            logger.info("pushWorkflow.call")
             val workflowPath = ".github/workflows/lint.yml"
             val lintWorkflowYml = SubmissionUtils.getLintWorkflowYml()
             val repoName = userEmail.replace('@', '.')
@@ -127,7 +123,7 @@ class GitHubService(
      * Push description of the user as the readme to the GitHub repository.
      * @param apiClient the client for GitHub api calls
      * @param submitSolutionRequestDTO the request to upload the code
-     * @param userEmail the owner and name of the repo
+     * @param userEmail the email of the user who made the submission
      * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushReadme(
@@ -136,7 +132,6 @@ class GitHubService(
         userEmail: String,
     ): Response<PushFileResponse> =
         coroutineScope {
-            logger.info("pushReadme.call")
             val readmePath = "README.md"
             val readmeContentEncoded = SubmissionUtils.fillReadme(userEmail, submitSolutionRequestDTO)
             val repoName = userEmail.replace('@', '.')
@@ -162,7 +157,6 @@ class GitHubService(
         apiClient: GitHubApiClient,
         repoName: String,
     ): Response<Void> = coroutineScope {
-        logger.info("triggerLintingWorkflow.call")
         val workflowName = "lint.yml"
         val branch = "main"
         val workflowDispatch = WorkflowDispatch(branch)
@@ -185,7 +179,6 @@ class GitHubService(
         apiClient: GitHubApiClient,
         repoName: String,
     ): Boolean {
-        logger.info("submissionGitRepositoryExists.call")
         val getRepository = apiClient.getSubmissionRepository(repoName).execute()
         return getRepository.isSuccessful
     }
