@@ -70,10 +70,10 @@ class SubmissionService(
             if (gitHubService.submissionGitRepositoryExists(gitHubApiClient, repoName)) {
                 throw SolutionAlreadySubmittedException("Submission Repository already exists")
             } else {
-                gitHubService.createRepo(gitHubApiClient, repoName)
+                gitHubService.createRepo(gitHubApiClient, userEmail)
             }
             try {
-                gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
+                gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, userEmail)
                 gitHubService.triggerLintingWorkflow(gitHubApiClient, repoName)
             } catch (e: Exception) {
                 gitHubService.deleteSubmissionRepository(gitHubApiClient, repoName)

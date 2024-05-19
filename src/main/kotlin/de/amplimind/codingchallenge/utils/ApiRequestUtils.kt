@@ -22,7 +22,6 @@ object ApiRequestUtils {
             if (t.isSuccessful) {
                 return t
             } else {
-                println("retrying request")
                 delay(500)
             }
         }
