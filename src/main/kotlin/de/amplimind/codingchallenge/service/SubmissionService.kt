@@ -6,6 +6,7 @@ import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.events.SubmissionStatusChangedEvent
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
+import de.amplimind.codingchallenge.exceptions.SubmissionException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.extensions.DTOExtensions.toSumbissionInfoDTO
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
@@ -71,8 +72,13 @@ class SubmissionService(
             } else {
                 gitHubService.createRepo(gitHubApiClient, repoName)
             }
-            gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
-            gitHubService.triggerWorkflow(gitHubApiClient, repoName)
+            try {
+                gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, repoName)
+                gitHubService.triggerLintingWorkflow(gitHubApiClient, repoName)
+            } catch (e: Exception) {
+                gitHubService.deleteSubmissionRepository(gitHubApiClient, repoName)
+                throw SubmissionException("Submission failed: ${e.message}")
+            }
         }
 
         submission.turnInDate = newTurnInDate
