@@ -24,9 +24,9 @@ class GitHubService(
 
     /**
      * Upload the code to the Repository.
-     * @param apiClient the client for GitHub api alls
+     * @param apiClient the client for GitHub api calls
      * @param submitSolutionRequestDTO the request to upload the code
-     * @param repoName the email of the user who made the submission
+     * @param repoName the owner and name of the repo
      */
     suspend fun pushToRepo(
         apiClient: GitHubApiClient,
@@ -40,8 +40,9 @@ class GitHubService(
 
     /**
      * Create the GitHub submission repository.
-     * @param apiClient the client for GitHub api alls
+     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
+     * @return the [Response<CreateRepoResponse>] of the GitHub api call
      */
     suspend fun createRepo(
         apiClient: GitHubApiClient,
@@ -62,9 +63,10 @@ class GitHubService(
 
     /**
      * Push the code to the GitHub repository.
-     * @param apiClient the client for GitHub api alls
+     * @param apiClient the client for GitHub api calls
      * @param multipartFile the code to push
      * @param repoName the owner and name of the repo
+     * @return the [List<Response<PushFileResponse>>] of the GitHub api calls
      */
     suspend fun pushCode(
         apiClient: GitHubApiClient,
@@ -89,8 +91,9 @@ class GitHubService(
 
     /**
      * Push the linting workflow to the GitHub repository.
-     * @param apiClient the client for GitHub api alls
+     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
+     * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushWorkflow(
         apiClient: GitHubApiClient,
@@ -113,9 +116,10 @@ class GitHubService(
 
     /**
      * Push description of the user as the readme to the GitHub repository.
-     * @param apiClient the client for GitHub api call
-     * @param description the description the user sent
+     * @param apiClient the client for GitHub api calls
+     * @param submitSolutionRequestDTO the request to upload the code
      * @param repoName the owner and name of the repo
+     * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushReadme(
         apiClient: GitHubApiClient,
@@ -137,9 +141,10 @@ class GitHubService(
         }
 
     /**
-     * Trigger the lintig workflow.
-     * @param apiClient the client for GitHub api alls
+     * Trigger the linting workflow.
+     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
+     * @return the [Response<Void>] of the GitHub api call
      */
     suspend fun triggerLintingWorkflow(
         apiClient: GitHubApiClient,
@@ -159,7 +164,7 @@ class GitHubService(
 
     /**
      * Checks if the there already exists a GitHub Repository for the user.
-     * @param apiClient the client for GitHub api alls
+     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
      * @return the [Boolean] if it exists or not
      */
@@ -180,8 +185,16 @@ class GitHubService(
         return LintResultResponseDTO("")
     }
 
-
-    suspend fun deleteSubmissionRepository(apiClient: GitHubApiClient, repoName: String) = coroutineScope {
+    /**
+     * Delete a submission GitHub repository.
+     * @param apiClient the client for GitHub api calls
+     * @param repoName the owner and name of the repo
+     * @return the [Response<Void>] of the GitHub api call
+     */
+    suspend fun deleteSubmissionRepository(
+        apiClient: GitHubApiClient,
+        repoName: String
+    ): Response<Void> = coroutineScope {
         var req: Response<Void>? = null
         try {
             req = ApiRequestUtils.retry(10) { apiClient.deleteRepository(repoName) }
