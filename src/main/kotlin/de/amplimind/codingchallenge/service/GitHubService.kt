@@ -84,7 +84,8 @@ class GitHubService(
                     val fileContent = entry.value
                     val repoName = userEmail.replace('@', '.')
                     val committer = Committer(userEmail, userEmail)
-                    val submissionFileCode = SubmissionFile("committed by $userEmail", fileContent, committer)
+                    val commitMessage = "add code"
+                    val submissionFileCode = SubmissionFile(commitMessage, fileContent, committer)
                     try {
                         ApiRequestUtils.retry(5) { apiClient.pushFileCall(repoName, filePath, submissionFileCode) }
                     } catch (e: Exception) {
@@ -110,7 +111,8 @@ class GitHubService(
             val lintWorkflowYml = SubmissionUtils.getLintWorkflowYml()
             val repoName = userEmail.replace('@', '.')
             val committer = Committer(userEmail, userEmail)
-            val submissionFileWorkflow = SubmissionFile("committed by $userEmail", lintWorkflowYml, committer)
+            val commitMessage = "add lint.yml"
+            val submissionFileWorkflow = SubmissionFile(commitMessage, lintWorkflowYml, committer)
             var req: Response<PushFileResponse>? = null
             try {
                 req = ApiRequestUtils.retry(5) { apiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
@@ -139,7 +141,8 @@ class GitHubService(
             val readmeContentEncoded = SubmissionUtils.fillReadme(userEmail, submitSolutionRequestDTO)
             val repoName = userEmail.replace('@', '.')
             val committer = Committer(userEmail, userEmail)
-            val submissionFileReadme = SubmissionFile("committed by $userEmail", readmeContentEncoded, committer)
+            val commitMessage = "add README.md"
+            val submissionFileReadme = SubmissionFile(commitMessage, readmeContentEncoded, committer)
             var req: Response<PushFileResponse>? = null
             try {
                 req = ApiRequestUtils.retry(5) { apiClient.pushFileCall(repoName, readmePath, submissionFileReadme) }
