@@ -29,7 +29,7 @@ class GitHubService(
      * @param userEmail the email of the user who made the submission
      */
     suspend fun pushToRepo(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
     ) = coroutineScope {
@@ -45,7 +45,7 @@ class GitHubService(
      * @return the [Response<CreateRepoResponse>] of the GitHub api call
      */
     suspend fun createRepo(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         userEmail: String
     ): Response<CreateRepoResponse> =
         coroutineScope {
@@ -70,7 +70,7 @@ class GitHubService(
      * @return the [List<Response<PushFileResponse>>] of the GitHub api calls
      */
     suspend fun pushCode(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         multipartFile: MultipartFile,
         userEmail: String,
     ): List<Response<PushFileResponse>> =
@@ -99,7 +99,7 @@ class GitHubService(
      * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushWorkflow(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         userEmail: String,
     ): Response<PushFileResponse> =
         coroutineScope {
@@ -127,7 +127,7 @@ class GitHubService(
      * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushReadme(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
     ): Response<PushFileResponse> =
@@ -154,8 +154,8 @@ class GitHubService(
      * @return the [Response<Void>] of the GitHub api call
      */
     suspend fun triggerLintingWorkflow(
-        apiClient: GitHubApiClient,
-        repoName: String,
+        apiClient: GitHubApiClientI,
+        repoName: String
     ): Response<Void> = coroutineScope {
         val workflowName = "lint.yml"
         val branch = "main"
@@ -176,7 +176,7 @@ class GitHubService(
      * @return the [Boolean] if it exists or not
      */
     fun submissionGitRepositoryExists(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         repoName: String,
     ): Boolean {
         val getRepository = apiClient.getSubmissionRepository(repoName).execute()
@@ -199,7 +199,7 @@ class GitHubService(
      * @return the [Response<Void>] of the GitHub api call
      */
     suspend fun deleteSubmissionRepository(
-        apiClient: GitHubApiClient,
+        apiClient: GitHubApiClientI,
         repoName: String
     ): Response<Void> = coroutineScope {
         var req: Response<Void>? = null

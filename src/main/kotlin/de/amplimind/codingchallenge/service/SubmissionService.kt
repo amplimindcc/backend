@@ -13,7 +13,7 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import de.amplimind.codingchallenge.submission.createGitHubApiClient
+import de.amplimind.codingchallenge.submission.GitHubApiClientI
 import de.amplimind.codingchallenge.utils.UserUtils
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -31,10 +31,11 @@ import java.util.concurrent.TimeUnit
 class SubmissionService(
     private val submissionRepository: SubmissionRepository,
     private val gitHubService: GitHubService,
+    private val gitHubApiClientI: GitHubApiClientI,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-    val accessToken = ""
+
 
     companion object {
         private const val DAYS_TILL_DEADLINE: Long = 3L
@@ -64,19 +65,18 @@ class SubmissionService(
             }
         }
 
-        val gitHubApiClient = createGitHubApiClient(accessToken)
         val repoName = userEmail.replace('@', '.')
         runBlocking {
-            if (gitHubService.submissionGitRepositoryExists(gitHubApiClient, repoName)) {
+            if (gitHubService.submissionGitRepositoryExists(gitHubApiClientI, repoName)) {
                 throw SolutionAlreadySubmittedException("Submission Repository already exists")
             } else {
-                gitHubService.createRepo(gitHubApiClient, userEmail)
+                gitHubService.createRepo(gitHubApiClientI, userEmail)
             }
             try {
-                gitHubService.pushToRepo(gitHubApiClient, submitSolutionRequestDTO, userEmail)
-                gitHubService.triggerLintingWorkflow(gitHubApiClient, repoName)
+                gitHubService.pushToRepo(gitHubApiClientI, submitSolutionRequestDTO, userEmail)
+                gitHubService.triggerLintingWorkflow(gitHubApiClientI, repoName)
             } catch (e: Exception) {
-                gitHubService.deleteSubmissionRepository(gitHubApiClient, repoName)
+                gitHubService.deleteSubmissionRepository(gitHubApiClientI, repoName)
                 throw SubmissionException("Submission failed: ${e.message}")
             }
         }
