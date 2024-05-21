@@ -38,10 +38,10 @@ class SubmissionController(
     @Operation(summary = "Endpoint for getting the linting result for a specific user.")
     @ApiResponse(responseCode = "200", description = "Get the linting results")
     @GetMapping("/lint/{email}")
-    fun submit(
+    fun getLinterResult(
         @PathVariable email: String,
     ): ResponseEntity<LintResultResponseDTO> {
-        return ResponseEntity.ok(this.gitHubService.getLintingResult(email))
+        return ResponseEntity.ok(this.submissionService.getLinterResponse(email))
     }
 
     @Operation(summary = "Endpoint for fetching the submission active info.")
