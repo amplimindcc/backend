@@ -1,9 +1,11 @@
 package de.amplimind.codingchallenge.utils
 
+import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
 import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.exceptions.ZipBombException
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.util.Base64
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -89,5 +91,36 @@ object ZipUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Open a zip file from a byte stream
+     * @param byteStream the byte stream of the zip file
+     * @return the [ZipInputStream] of the zip file
+     */
+    fun openZipFile(byteStream: InputStream): ZipInputStream {
+        return ZipInputStream(byteStream)
+    }
+
+    /**
+     * Read the content of the megalinter.log file from the zip file
+     * @param zipFile the zip file
+     * @return the content of the megalinter.log file
+     */
+    fun readLintResult(zipFile: ZipInputStream): String {
+        var entry = zipFile.nextEntry
+        while (entry != null) {
+            if (entry.name == "megalinter-reports/megalinter.log") {
+                val buffer = ByteArray(1024)
+                val outputStream = ByteArrayOutputStream()
+                var len: Int
+                while (zipFile.read(buffer).also { len = it } > 0) {
+                    outputStream.write(buffer, 0, len)
+                }
+                return outputStream.toString()
+            }
+            entry = zipFile.nextEntry
+        }
+        throw LinterResultNotAvailableException("Error while reading the linter result: megalinter.log not found")
     }
 }

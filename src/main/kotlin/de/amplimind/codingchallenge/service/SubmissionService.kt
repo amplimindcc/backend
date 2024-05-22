@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.service
 
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.events.SubmissionStatusChangedEvent
@@ -162,5 +163,17 @@ class SubmissionService(
 
     fun fetchAllSubmissions(): List<SubmissionInfoResponseDTO> {
         return this.submissionRepository.findAll().map { it.toSumbissionInfoDTO() }
+    }
+
+    /**
+     * Fetches the linting result of the user's submission
+     * @param mail the email of the user
+     * @return the [LintResultResponseDTO] of the linting result
+     */
+    fun getLinterResponse(mail: String): LintResultResponseDTO {
+        return runBlocking {
+            val linterResponse = gitHubService.getLintingResult(mail, gitHubApiClientI)
+            linterResponse
+        }
     }
 }

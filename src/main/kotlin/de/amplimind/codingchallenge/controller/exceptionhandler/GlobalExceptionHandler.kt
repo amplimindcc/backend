@@ -62,6 +62,11 @@ class GlobalExceptionHandler {
         return ResponseEntity("Email is not an email: ${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
     }
 
+    @ExceptionHandler(LinterResultNotAvailableException::class)
+    fun handleLinterResultNotFoundException(ex: LinterResultNotAvailableException): ResponseEntity<String> {
+        return ResponseEntity("Linter result not found: ${ex.message}", HttpStatus.NOT_FOUND)
+    }
+
     @ExceptionHandler(ProjectInUseException::class)
     fun handleProjectIsUseException(ex: ProjectInUseException): ResponseEntity<String> {
         return ResponseEntity("Error whilst deleting project: ${ex.message}", HttpStatus.CONFLICT)

@@ -3,6 +3,8 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
 import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
+import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
+import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.*
 import de.amplimind.codingchallenge.utils.ZipUtils
@@ -13,6 +15,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import retrofit2.Response
+import java.util.zip.ZipException
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 
 @Service
 class GitHubService(
@@ -188,8 +193,27 @@ class GitHubService(
      * @param userEmail the email of the user who made the submission
      * @return the [LintResultResponseDTO] of the submission repository
      */
-    fun getLintingResult(userEmail: String): LintResultResponseDTO {
-        return LintResultResponseDTO("")
+    suspend fun getLintingResult(userEmail: String, apiClient: GitHubApiClientI): LintResultResponseDTO {
+        val repoName = userEmail.replace('@', '.')
+        val artifactsResponse = apiClient.getArtifacts(repoName);
+
+        val lintLogArtifact = artifactsResponse.artifacts.find { it.name == "MegaLinter reports" }
+                ?: throw LinterResultNotAvailableException("Error while getting artifact: MegaLinter reports not found")
+
+        val downloadArtifact = apiClient.downloadArtifact(repoName, lintLogArtifact.id)
+        if (!downloadArtifact.isSuccessful) {
+            throw LinterResultNotAvailableException("Error while downloading artifact: ${downloadArtifact.message()}")
+        }
+
+        val zipFile: ZipInputStream
+        try {
+            zipFile = ZipUtils.openZipFile(downloadArtifact.body()!!.byteStream())
+        } catch (e: Exception) {
+            throw UnzipException("Error while unzipping the file: ${e.message}")
+        }
+        val lintResult = ZipUtils.readLintResult(zipFile)
+
+        return LintResultResponseDTO(lintResult)
     }
 
     /**
