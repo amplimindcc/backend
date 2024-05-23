@@ -5,14 +5,17 @@ import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
+import io.mockk.just
 import io.mockk.slot
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.any
+import org.springframework.context.ApplicationEventPublisher
 import java.sql.Timestamp
 import java.time.Instant
 
@@ -25,6 +28,9 @@ internal class SubmissionServiceTest {
 
     @MockK
     private lateinit var gitHubService: GitHubService
+
+    @MockK
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @InjectMockKs
     private lateinit var submissionService: SubmissionService
@@ -53,6 +59,8 @@ internal class SubmissionServiceTest {
         val savedSubmissionSlot = slot<Submission>()
 
         every { submissionRepository.save(capture(savedSubmissionSlot)) } returns any()
+
+        every { eventPublisher.publishEvent(any()) } just Runs
 
         val updatedSubmission = this.submissionService.changeSubmissionStateReviewed(submission.userEmail)
 
