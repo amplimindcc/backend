@@ -4,7 +4,6 @@ package de.amplimind.codingchallenge.constants
  * Constants for messages which are used in the application
  */
 object MessageConstants {
-
     /**
      * The subject for the user emails
      */
