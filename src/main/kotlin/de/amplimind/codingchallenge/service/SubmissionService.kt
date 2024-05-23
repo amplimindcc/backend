@@ -14,7 +14,6 @@ import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import de.amplimind.codingchallenge.submission.GitHubApiClientI
 import de.amplimind.codingchallenge.utils.UserUtils
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -32,11 +31,9 @@ import java.util.concurrent.TimeUnit
 class SubmissionService(
     private val submissionRepository: SubmissionRepository,
     private val gitHubService: GitHubService,
-    private val gitHubApiClientI: GitHubApiClientI,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-
 
     companion object {
         private const val DAYS_TILL_DEADLINE: Long = 3L
@@ -68,16 +65,16 @@ class SubmissionService(
 
         val repoName = userEmail.replace('@', '.')
         runBlocking {
-            if (gitHubService.submissionGitRepositoryExists(gitHubApiClientI, repoName)) {
+            if (gitHubService.submissionGitRepositoryExists(repoName)) {
                 throw SolutionAlreadySubmittedException("Submission Repository already exists")
             } else {
-                gitHubService.createRepo(gitHubApiClientI, userEmail)
+                gitHubService.createRepo(userEmail)
             }
             try {
-                gitHubService.pushToRepo(gitHubApiClientI, submitSolutionRequestDTO, userEmail)
-                gitHubService.triggerLintingWorkflow(gitHubApiClientI, repoName)
+                gitHubService.pushToRepo(submitSolutionRequestDTO, userEmail)
+                gitHubService.triggerLintingWorkflow(repoName)
             } catch (e: Exception) {
-                gitHubService.deleteSubmissionRepository(gitHubApiClientI, repoName)
+                gitHubService.deleteSubmissionRepository(repoName)
                 throw SubmissionException("Submission failed: ${e.message}")
             }
         }
@@ -172,7 +169,7 @@ class SubmissionService(
      */
     fun getLinterResponse(mail: String): LintResultResponseDTO {
         return runBlocking {
-            val linterResponse = gitHubService.getLintingResult(mail, gitHubApiClientI)
+            val linterResponse = gitHubService.getLintingResult(mail)
             linterResponse
         }
     }

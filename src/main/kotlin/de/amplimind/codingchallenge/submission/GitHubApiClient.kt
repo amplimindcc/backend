@@ -4,9 +4,14 @@ import kotlinx.serialization.Serializable
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
-interface GitHubApiClientI {
+interface GitHubApiClient {
     @PUT("repos/amplimindcc/{repoName}/contents/{filePath}")
     suspend fun pushFileCall(
         @Path("repoName") repoName: String,
@@ -34,49 +39,48 @@ interface GitHubApiClientI {
 
     @DELETE("repos/amplimindcc/{repoName}")
     suspend fun deleteRepository(
-        @Path("repoName") repoName: String
+        @Path("repoName") repoName: String,
     ): Response<Void>
 
     @GET("repos/amplimindcc/{repoName}/actions/artifacts")
     suspend fun getArtifacts(
-            @Path("repoName") repoName: String
+        @Path("repoName") repoName: String,
     ): ArtifactsResponse
 
     @GET("repos/amplimindcc/{repoName}/actions/artifacts/{artifactId}/zip")
     suspend fun downloadArtifact(
-            @Path("repoName") repoName: String,
-            @Path("artifactId") artifactId: Int
+        @Path("repoName") repoName: String,
+        @Path("artifactId") artifactId: Int,
     ): Response<ResponseBody>
-
 }
 
 // Requests
 
 @Serializable
 data class Artifact(
-        val id: Int,
-        val name: String,
-        val url: String,
-        val archive_download_url: String
+    val id: Int,
+    val name: String,
+    val url: String,
+    val archive_download_url: String,
 )
 
 @Serializable
 data class ArtifactsResponse(
-        val total_count: Int,
-        val artifacts: List<Artifact>
+    val total_count: Int,
+    val artifacts: List<Artifact>,
 )
 
 @Serializable
 data class SubmissionFile(
     val message: String,
     val content: String,
-    val committer: Committer
+    val committer: Committer,
 )
 
 @Serializable
 data class Committer(
     val name: String,
-    val email: String
+    val email: String,
 )
 
 @Serializable
@@ -100,5 +104,5 @@ data class PushFileResponse(
 @Serializable
 data class CreateRepoResponse(
     val id: Int,
-    val name: String
+    val name: String,
 )

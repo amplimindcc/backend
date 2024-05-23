@@ -6,22 +6,27 @@ import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
 import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
 import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import de.amplimind.codingchallenge.submission.*
-import de.amplimind.codingchallenge.utils.ZipUtils
+import de.amplimind.codingchallenge.submission.Committer
+import de.amplimind.codingchallenge.submission.CreateRepoResponse
+import de.amplimind.codingchallenge.submission.GitHubApiClient
+import de.amplimind.codingchallenge.submission.PushFileResponse
+import de.amplimind.codingchallenge.submission.SubmissionFile
+import de.amplimind.codingchallenge.submission.SubmissionGitHubRepository
+import de.amplimind.codingchallenge.submission.WorkflowDispatch
 import de.amplimind.codingchallenge.utils.ApiRequestUtils
 import de.amplimind.codingchallenge.utils.SubmissionUtils
+import de.amplimind.codingchallenge.utils.ZipUtils
 import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import retrofit2.Response
-import java.util.zip.ZipException
-import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 @Service
 class GitHubService(
     private val submissionRepository: SubmissionRepository,
+    private val gitHubApiClient: GitHubApiClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -29,30 +34,24 @@ class GitHubService(
 
     /**
      * Upload the code to the Repository.
-     * @param apiClient the client for GitHub api calls
      * @param submitSolutionRequestDTO the request to upload the code
      * @param userEmail the email of the user who made the submission
      */
     suspend fun pushToRepo(
-        apiClient: GitHubApiClientI,
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
     ) = coroutineScope {
-        pushCode(apiClient, submitSolutionRequestDTO.zipFileContent, userEmail)
-        pushReadme(apiClient, submitSolutionRequestDTO, userEmail)
-        pushWorkflow(apiClient, userEmail)
+        pushCode(submitSolutionRequestDTO.zipFileContent, userEmail)
+        pushReadme(submitSolutionRequestDTO, userEmail)
+        pushWorkflow(userEmail)
     }
 
     /**
      * Create the GitHub submission repository.
-     * @param apiClient the client for GitHub api calls
      * @param userEmail the email of the user who made the submission
      * @return the [Response<CreateRepoResponse>] of the GitHub api call
      */
-    suspend fun createRepo(
-        apiClient: GitHubApiClientI,
-        userEmail: String
-    ): Response<CreateRepoResponse> =
+    suspend fun createRepo(userEmail: String): Response<CreateRepoResponse> =
         coroutineScope {
             val organisation = "amplimindcc"
             val description = "This is the submission repository of $userEmail"
@@ -60,7 +59,7 @@ class GitHubService(
             val submissionRepository = SubmissionGitHubRepository(repoName, description)
             var req: Response<CreateRepoResponse>? = null
             try {
-                req = ApiRequestUtils.retry(5) { apiClient.createSubmissionRepository(organisation, submissionRepository) }
+                req = ApiRequestUtils.retry(5) { gitHubApiClient.createSubmissionRepository(organisation, submissionRepository) }
             } catch (e: Exception) {
                 throw GitHubApiCallException("createRepo failed: " + e.message)
             }
@@ -69,13 +68,11 @@ class GitHubService(
 
     /**
      * Push the code to the GitHub repository.
-     * @param apiClient the client for GitHub api calls
      * @param multipartFile the code to push
      * @param userEmail the email of the user who made the submission
      * @return the [List<Response<PushFileResponse>>] of the GitHub api calls
      */
     suspend fun pushCode(
-        apiClient: GitHubApiClientI,
         multipartFile: MultipartFile,
         userEmail: String,
     ): List<Response<PushFileResponse>> =
@@ -89,7 +86,7 @@ class GitHubService(
                     val commitMessage = "add code"
                     val submissionFileCode = SubmissionFile(commitMessage, fileContent, committer)
                     try {
-                        ApiRequestUtils.retry(5) { apiClient.pushFileCall(repoName, filePath, submissionFileCode) }
+                        ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, filePath, submissionFileCode) }
                     } catch (e: Exception) {
                         throw GitHubApiCallException("pushCode failed at file ${entry.key}: " + e.message)
                     }
@@ -99,14 +96,10 @@ class GitHubService(
 
     /**
      * Push the linting workflow to the GitHub repository.
-     * @param apiClient the client for GitHub api calls
      * @param userEmail the email of the user who made the submission
      * @return the [Response<PushFileResponse>] of the GitHub api call
      */
-    suspend fun pushWorkflow(
-        apiClient: GitHubApiClientI,
-        userEmail: String,
-    ): Response<PushFileResponse> =
+    suspend fun pushWorkflow(userEmail: String): Response<PushFileResponse> =
         coroutineScope {
             val workflowPath = ".github/workflows/lint.yml"
             val lintWorkflowYml = SubmissionUtils.getLintWorkflowYml()
@@ -116,7 +109,7 @@ class GitHubService(
             val submissionFileWorkflow = SubmissionFile(commitMessage, lintWorkflowYml, committer)
             var req: Response<PushFileResponse>? = null
             try {
-                req = ApiRequestUtils.retry(5) { apiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
+                req = ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
             } catch (e: Exception) {
                 println("caught error in pushWorkflow")
                 throw GitHubApiCallException("pushWorkflow failed: " + e.message)
@@ -126,13 +119,11 @@ class GitHubService(
 
     /**
      * Push description of the user as the readme to the GitHub repository.
-     * @param apiClient the client for GitHub api calls
      * @param submitSolutionRequestDTO the request to upload the code
      * @param userEmail the email of the user who made the submission
      * @return the [Response<PushFileResponse>] of the GitHub api call
      */
     suspend fun pushReadme(
-        apiClient: GitHubApiClientI,
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
     ): Response<PushFileResponse> =
@@ -145,7 +136,7 @@ class GitHubService(
             val submissionFileReadme = SubmissionFile(commitMessage, readmeContentEncoded, committer)
             var req: Response<PushFileResponse>? = null
             try {
-                req = ApiRequestUtils.retry(5) { apiClient.pushFileCall(repoName, readmePath, submissionFileReadme) }
+                req = ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, readmePath, submissionFileReadme) }
             } catch (e: Exception) {
                 throw GitHubApiCallException("pushReadme failed: " + e.message)
             }
@@ -154,37 +145,30 @@ class GitHubService(
 
     /**
      * Trigger the linting workflow.
-     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
      * @return the [Response<Void>] of the GitHub api call
      */
-    suspend fun triggerLintingWorkflow(
-        apiClient: GitHubApiClientI,
-        repoName: String
-    ): Response<Void> = coroutineScope {
-        val workflowName = "lint.yml"
-        val branch = "main"
-        val workflowDispatch = WorkflowDispatch(branch)
-        var req: Response<Void>? = null
-        try {
-            req= ApiRequestUtils.retry(5) { apiClient.triggerWorkflow(repoName, workflowName, workflowDispatch) }
-        } catch (e: Exception) {
-            throw GitHubApiCallException("triggerLintingWorkflow failed: " + e.message)
+    suspend fun triggerLintingWorkflow(repoName: String): Response<Void> =
+        coroutineScope {
+            val workflowName = "lint.yml"
+            val branch = "main"
+            val workflowDispatch = WorkflowDispatch(branch)
+            var req: Response<Void>? = null
+            try {
+                req = ApiRequestUtils.retry(5) { gitHubApiClient.triggerWorkflow(repoName, workflowName, workflowDispatch) }
+            } catch (e: Exception) {
+                throw GitHubApiCallException("triggerLintingWorkflow failed: " + e.message)
+            }
+            return@coroutineScope req
         }
-        return@coroutineScope req
-    }
 
     /**
      * Checks if the there already exists a GitHub Repository for the user.
-     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
      * @return the [Boolean] if it exists or not
      */
-    fun submissionGitRepositoryExists(
-        apiClient: GitHubApiClientI,
-        repoName: String,
-    ): Boolean {
-        val getRepository = apiClient.getSubmissionRepository(repoName).execute()
+    fun submissionGitRepositoryExists(repoName: String): Boolean {
+        val getRepository = gitHubApiClient.getSubmissionRepository(repoName).execute()
         return getRepository.isSuccessful
     }
 
@@ -193,14 +177,15 @@ class GitHubService(
      * @param userEmail the email of the user who made the submission
      * @return the [LintResultResponseDTO] of the submission repository
      */
-    suspend fun getLintingResult(userEmail: String, apiClient: GitHubApiClientI): LintResultResponseDTO {
+    suspend fun getLintingResult(userEmail: String): LintResultResponseDTO {
         val repoName = userEmail.replace('@', '.')
-        val artifactsResponse = apiClient.getArtifacts(repoName);
+        val artifactsResponse = gitHubApiClient.getArtifacts(repoName)
 
-        val lintLogArtifact = artifactsResponse.artifacts.find { it.name == "MegaLinter reports" }
+        val lintLogArtifact =
+            artifactsResponse.artifacts.find { it.name == "MegaLinter reports" }
                 ?: throw LinterResultNotAvailableException("Error while getting artifact: MegaLinter reports not found")
 
-        val downloadArtifact = apiClient.downloadArtifact(repoName, lintLogArtifact.id)
+        val downloadArtifact = gitHubApiClient.downloadArtifact(repoName, lintLogArtifact.id)
         if (!downloadArtifact.isSuccessful) {
             throw LinterResultNotAvailableException("Error while downloading artifact: ${downloadArtifact.message()}")
         }
@@ -218,20 +203,17 @@ class GitHubService(
 
     /**
      * Delete a submission GitHub repository.
-     * @param apiClient the client for GitHub api calls
      * @param repoName the owner and name of the repo
      * @return the [Response<Void>] of the GitHub api call
      */
-    suspend fun deleteSubmissionRepository(
-        apiClient: GitHubApiClientI,
-        repoName: String
-    ): Response<Void> = coroutineScope {
-        var req: Response<Void>? = null
-        try {
-            req = ApiRequestUtils.retry(10) { apiClient.deleteRepository(repoName) }
-        } catch (e: Exception) {
-            throw GitHubApiCallException("deleteSubmissionRepository failed: " + e.message)
+    suspend fun deleteSubmissionRepository(repoName: String): Response<Void> =
+        coroutineScope {
+            var req: Response<Void>? = null
+            try {
+                req = ApiRequestUtils.retry(10) { gitHubApiClient.deleteRepository(repoName) }
+            } catch (e: Exception) {
+                throw GitHubApiCallException("deleteSubmissionRepository failed: " + e.message)
+            }
+            return@coroutineScope req
         }
-        return@coroutineScope req
-    }
 }

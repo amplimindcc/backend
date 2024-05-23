@@ -1,13 +1,12 @@
 package de.amplimind.codingchallenge.config
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-
-import de.amplimind.codingchallenge.submission.GitHubApiClientI
+import de.amplimind.codingchallenge.submission.GitHubApiClient
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
@@ -17,7 +16,7 @@ class GitHubApiClientConfig {
     val accessToken = ""
 
     @Bean
-    fun githubApiClient(): GitHubApiClientI {
+    fun githubApiClient(): GitHubApiClient {
         val authToken = "Bearer $accessToken"
         val httpClient =
             OkHttpClient.Builder()
@@ -42,6 +41,6 @@ class GitHubApiClientConfig {
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .client(httpClient)
                 .build()
-        return retrofit.create(GitHubApiClientI::class.java)
+        return retrofit.create(GitHubApiClient::class.java)
     }
 }
