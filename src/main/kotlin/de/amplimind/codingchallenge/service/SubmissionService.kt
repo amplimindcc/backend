@@ -35,7 +35,6 @@ class SubmissionService(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-
     companion object {
         private const val DAYS_TILL_DEADLINE: Long = 3L
     }
@@ -170,7 +169,7 @@ class SubmissionService(
      */
     fun getLinterResponse(mail: String): LintResultResponseDTO {
         return runBlocking {
-            val linterResponse = gitHubService.getLintingResult(mail, gitHubApiClientI)
+            val linterResponse = gitHubService.getLintingResult(mail)
             linterResponse
         }
     }

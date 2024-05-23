@@ -1,4 +1,4 @@
-package de.amplimind.codingchallenge.exceptions;
+package de.amplimind.codingchallenge.exceptions
 
 /**
  * Custom exception for when the linter result is not available
