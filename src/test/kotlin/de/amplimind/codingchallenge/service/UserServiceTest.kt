@@ -3,6 +3,7 @@ package de.amplimind.codingchallenge.service
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
 import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -219,5 +221,25 @@ internal class UserServiceTest {
         every { userRepository.save(any()) } returns User(emailToUse, "password", UserRole.USER)
 
         assertThrows<UserAlreadyExistsException> { userService.handleInvite(inviteRequestDTO) }
+    }
+
+    /**
+     * Test the handle resend invite method in the [UserService] when a unknown email is used.
+     */
+    @Test
+    fun test_handle_resend_invite_not_found() {
+        every { userRepository.findByEmail(any()) } returns null
+
+        assertThrows<ResourceNotFoundException> { userService.handleResendInvite(InviteRequestDTO("unknown", true)) }
+    }
+
+    /**
+     * Test the handle resend invite method in the [UserService] when a user is already registered.
+     */
+    @Test
+    fun test_handle_resend_invite_already_registered() {
+        every { userRepository.findByEmail(any()) } returns User("email", "password", UserRole.USER)
+
+        assertThrows<UserAlreadyRegisteredException> { userService.handleResendInvite(InviteRequestDTO("email", true)) }
     }
 }
