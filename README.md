@@ -5,6 +5,20 @@
 # Run the application
 - Run CodingChallengeApplication#main
 
+# Linting
+This project uses Klint to format the code and check for formatting errors.
+
+Run the following gradle task in order to run the linter:
+
+![img_2.png](img_2.png)
+
+## Wildcard imports
+The linter will abort with an error if wildcard imports are used. Sadly intellij does those import automatically.
+To fix this, go to the settings and search for "Imports" and disable the option "Use single class import".
+
+![img_3.png](img_3.png)
+
+
 # See all the endpoints
 - Run the application and go to http://localhost:8080/swagger-ui/index.html
 
