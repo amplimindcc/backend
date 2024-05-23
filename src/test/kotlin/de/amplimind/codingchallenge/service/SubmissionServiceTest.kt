@@ -148,4 +148,33 @@ internal class SubmissionServiceTest {
 
         assertThrows<IllegalStateException> { this.submissionService.changeSubmissionStateReviewed("user@web.de") }
     }
+
+    /**
+     * Test that the correct project ID for a user is fetched.
+     */
+    @Test
+    fun test_get_project_id_of_user_works() {
+        val submission =
+            Submission(
+                userEmail = "user@web.de",
+                status = SubmissionStates.REVIEWED,
+                turnInDate = Timestamp.from(Instant.now()),
+                projectID = 1,
+                expirationDate = Timestamp.from(Instant.now()),
+            )
+
+        every { submissionRepository.findByUserEmail(any()) } returns submission
+
+        assert(submissionService.getProjectIdOfUser("user@web.de") == 1L)
+    }
+
+    /**
+     * Test that an exception is thrown if the user supplied does not have a submission.
+     */
+    @Test
+    fun test_get_project_id_of_user_fails() {
+        every { submissionRepository.findByUserEmail(any()) } returns null
+
+        assertThrows<ResourceNotFoundException> { submissionService.getProjectIdOfUser("notexistent@web.de") }
+    }
 }
