@@ -12,6 +12,9 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
+/**
+ * Security configuration for the application
+ */
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
@@ -41,7 +44,6 @@ class SecurityConfig(
             .csrf { it.disable() } // TODO Enable CSRF
             .authorizeHttpRequests {
                 it.requestMatchers("/v1/auth/**", "/v1/account/**").permitAll()
-                    // TODO OPEN_API should be secured in the end (only admin)
                     .requestMatchers(*OPEN_API_PATHS).permitAll()
 
                 it.requestMatchers("${ADMIN_PATH}**").hasRole(UserRole.ADMIN.name)
@@ -53,7 +55,6 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             }
             .cors { corsConfigurationSource() }
-            // TODO Handle logout (cookie
             .build()
     }
 
@@ -62,7 +63,7 @@ class SecurityConfig(
         val cors = CorsConfiguration()
         cors.allowedOriginPatterns = listOf("http://localhost:*") // todo: change to frontend URL
         cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
-        cors.allowedHeaders = listOf("*") // todo: change to specific headers
+        cors.allowedHeaders = listOf("*")
         cors.allowCredentials = true
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", cors)

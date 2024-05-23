@@ -23,6 +23,9 @@ import org.springframework.web.multipart.MultipartFile
 import retrofit2.Response
 import java.util.zip.ZipInputStream
 
+/**
+ * Service class responsible for handling the GitHub API calls.
+ */
 @Service
 class GitHubService(
     private val submissionRepository: SubmissionRepository,

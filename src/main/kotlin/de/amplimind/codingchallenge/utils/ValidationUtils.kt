@@ -4,6 +4,9 @@ import de.amplimind.codingchallenge.exceptions.EmailFormatException
 import de.amplimind.codingchallenge.exceptions.PasswordValidationException
 import org.apache.commons.validator.routines.EmailValidator
 
+/**
+ * Utils class containing validation methods for email and password
+ */
 object ValidationUtils {
     private val EMAIL_VALIDATOR = EmailValidator.getInstance()
     private val SPECIAL_CHARACTERS = Regex(pattern = "[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]")

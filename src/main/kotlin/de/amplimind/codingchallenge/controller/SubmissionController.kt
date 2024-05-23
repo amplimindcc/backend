@@ -4,7 +4,6 @@ import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
-import de.amplimind.codingchallenge.service.GitHubService
 import de.amplimind.codingchallenge.service.SubmissionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/submission")
 class SubmissionController(
     private val submissionService: SubmissionService,
-    private val gitHubService: GitHubService,
 ) {
     @Operation(summary = "Endpoint for submitting a solution.")
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")

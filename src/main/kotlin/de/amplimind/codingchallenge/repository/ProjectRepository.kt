@@ -3,6 +3,9 @@ package de.amplimind.codingchallenge.repository
 import de.amplimind.codingchallenge.model.Project
 import org.springframework.data.jpa.repository.JpaRepository
 
+/**
+ * Repository responsible for the storage of [Project]s.
+ */
 interface ProjectRepository : JpaRepository<Project, Long> {
     /**
      * Find all projects by active status.

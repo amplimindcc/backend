@@ -58,7 +58,7 @@ class UserService(
     private val resetPasswordTokenStorage: ResetPasswordTokenStorage,
     private val inviteTokenExpirationService: InviteTokenExpirationService,
     @Value("\${app.frontend.url}")
-    private val SERVER_URL: String? = null,
+    private val FRONTEND_SERVER_URL: String? = null,
 ) {
     companion object {
         private const val RESET_PASSWORD_SUBJECT = "Password Reset Requested"
@@ -417,7 +417,7 @@ class UserService(
                 "Mit dem unten stehenden Link können sie sich als Admin auf der coding challange Plattform" +
                 " von Amplimind registrieren.<br>" +
                 "<br>" +
-                "<a href=\"$SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
+                "<a href=\"$FRONTEND_SERVER_URL/invite/$token\">Jetzt registrieren</a><br>" +
                 "<br>" +
                 "<b>Der Link läuft nach $expirationTime Tagen ab.</b>" +
                 MessageConstants.EMAIL_SIGNATURE +
@@ -429,7 +429,7 @@ class UserService(
             "wir laden Sie hiermit zu ihrer Coding Challange ein.<br>" +
             "Mit dem unten stehenden Link können Sie sich auf unserer Plattform registrieren.<br>" +
             "<br>" +
-            "<a href=\"$SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
+            "<a href=\"$FRONTEND_SERVER_URL/invite/$token\">Für Coding Challange registrieren</a><br>" +
             "<br>" +
             "<b>Der Link läuft nach $expirationTime Tagen ab.</b> Nachdem Sie sich registriert haben,<br> " +
             "können Sie ihre Aufgabe einsehen. Ab dann haben Sie <b>${AppConstants.SUBMISSION_EXPIRATION_DAYS} Tage</b> " +

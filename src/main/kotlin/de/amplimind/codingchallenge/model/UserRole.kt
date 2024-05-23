@@ -12,7 +12,7 @@ enum class UserRole {
     INIT,
 
     /**
-     * The has set a password
+     * The has set a password and thereby registered itself
      */
     USER,
 
