@@ -176,7 +176,9 @@ internal class SubmissionServiceTest {
         assertThrows<ResourceNotFoundException> { submissionService.getProjectIdOfUser("notexistent@web.de") }
     }
 
-
+    /**
+     * Test that all submissions come back and are mapped properly
+     */
     @Test
     fun test_fetch_all_submissions() {
         val commonSubmission = Submission(
@@ -215,6 +217,9 @@ internal class SubmissionServiceTest {
         assertNotNull(result[1].expirationDate)
     }
 
+    /**
+     * Test that when submissions are empty result is empty
+     */
     @Test
     fun  test_fetch_all_submissions_empty_submissions() {
         every { submissionRepository.findAll() } returns emptyList()
