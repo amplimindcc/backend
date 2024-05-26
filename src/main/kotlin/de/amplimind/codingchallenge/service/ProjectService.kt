@@ -88,7 +88,6 @@ class ProjectService(
      * @param id of the project fetched
      */
     fun fetchProjectById(id: Long): UserProjectResponseDTO {
-        val allProjects = projectRepository.findAll()
         val project =
             this.projectRepository.findById(id)
                 .orElseThrow { ResourceNotFoundException("Project with id $id not found.") }

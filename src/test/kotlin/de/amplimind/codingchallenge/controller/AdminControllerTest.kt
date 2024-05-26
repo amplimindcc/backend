@@ -9,13 +9,13 @@ import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
-import org.json.JSONArray
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.*
@@ -36,12 +36,16 @@ constructor(
     private val submissionRepository: SubmissionRepository,
     private val projectRepository: ProjectRepository,
 ) {
+    @Autowired
+    private lateinit var jdbcTemplate: JdbcTemplate
+
     @BeforeEach
     fun setUp() {
         TestDataInitializer(
             userRepository,
             submissionRepository,
             projectRepository,
+            jdbcTemplate = jdbcTemplate
         ).initTestData()
     }
 
@@ -188,37 +192,9 @@ constructor(
     @WithMockUser(username = "admin", roles = ["ADMIN"])
     fun test_change_project_active_status() {
 
-
-        // first create a new project
-        val createRequest = CreateProjectRequestDTO(
-            title = "123456789",
-            description = "this is a test to see if a new project is created",
-            active = true,
-        )
-
-        this.mockMvc.post("/v1/admin/project/add"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(createRequest)
-        }.andExpect {
-            status { isOk() }
-        }
-
-
-        // get all projects
-
-        var projectID = -1;
-        val projects = this.mockMvc.get("/v1/admin/project/fetch/all").andReturn()
-        val projectsAsJSON = JSONArray(projects.response.contentAsString)
-        (0 until projectsAsJSON.length()).forEach {
-            val project = projectsAsJSON.getJSONObject(it)
-            if(project.get("title")=="123456789") {
-                projectID = project.getInt("id")
-            }
-        }
-
-        if(projectID != -1) return
+        val projectId = 1L
         val changeRequest = ChangeProjectActiveStatusRequestDTO(
-            projectId = projectID.toLong(),
+            projectId = projectId,
             active = false
         )
 
@@ -328,48 +304,28 @@ constructor(
     @Test
     @WithMockUser(username = "admin", roles = ["ADMIN"])
     fun test_delete_project_success() {
-
-        // first create a new project
-        val request = CreateProjectRequestDTO(
-            title = "123456789",
-            description = "this is a test to see if a new project is created",
-            active = true,
-        )
-
-        this.mockMvc.post("/v1/admin/project/add"){
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isOk() }
-        }
-
-
-        // get all projects and filter for id
-
-        var projectID = -1;
-        val projects = this.mockMvc.get("/v1/admin/project/fetch/all").andReturn()
-        val projectsAsJSON = JSONArray(projects.response.contentAsString)
-        (0 until projectsAsJSON.length()).forEach {
-            val project = projectsAsJSON.getJSONObject(it)
-            if(project.get("title")=="123456789") {
-                projectID = project.getInt("id")
-            }
-        }
-
-        if (projectID == -1) return
-
-        this.mockMvc.delete("/v1/admin/project/$projectID").andExpect {
+        val projectId = 2L
+        this.mockMvc.delete("/v1/admin/project/$projectId").andExpect {
             status { isOk() }
         }
     }
 
     @Test
     @WithMockUser(username = "admin", roles = ["ADMIN"])
-    fun test_delete_project_failure() {
+    fun test_delete_project_failure_still_in_use() {
+        val projectId = 1L
+        this.mockMvc.delete("/v1/admin/project/$projectId").andExpect {
+            status { isConflict() }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = ["ADMIN"])
+    fun test_delete_project_failure_not_found() {
         val projectId = 999009L
 
         this.mockMvc.delete("/v1/admin/project/$projectId").andExpect {
-            status { isConflict() }
+            status { isNotFound() }
         }
     }
 
@@ -395,11 +351,31 @@ constructor(
 
     @Test
     @WithMockUser(username = "admin", roles = ["ADMIN"])
-    fun test_download_user_project() {
+    fun test_download_user_project_success() {
         val email = "user@web.de"
 
         this.mockMvc.get("/v1/admin/download/project/$email").andExpect {
             status { isOk() }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = ["ADMIN"])
+    fun test_download_user_project_failure_user_not_found() {
+        val email = "unknown@web.de"
+
+        this.mockMvc.get("/v1/admin/download/project/$email").andExpect {
+            status { isNotFound() }
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = ["ADMIN"])
+    fun test_download_user_project_failure_project_not_found() {
+        val email = "init@web.de"
+
+        this.mockMvc.get("/v1/admin/download/project/$email").andExpect {
+            status { isUnprocessableEntity() }
         }
     }
 }
