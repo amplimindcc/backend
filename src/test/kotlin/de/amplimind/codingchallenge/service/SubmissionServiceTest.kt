@@ -4,13 +4,11 @@ import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import io.mockk.MockKAnnotations
-import io.mockk.Runs
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
-import io.mockk.slot
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -176,5 +174,53 @@ internal class SubmissionServiceTest {
         every { submissionRepository.findByUserEmail(any()) } returns null
 
         assertThrows<ResourceNotFoundException> { submissionService.getProjectIdOfUser("notexistent@web.de") }
+    }
+
+
+    @Test
+    fun test_fetch_all_submissions() {
+        val commonSubmission = Submission(
+            userEmail = "user@web.de",
+            status = SubmissionStates.SUBMITTED,
+            turnInDate = Timestamp.from(Instant.now().minusSeconds(60)),
+            projectID = 1,
+            expirationDate = Timestamp.from(Instant.now().plusSeconds(6000))
+        )
+
+        val commonSubmission2 = Submission(
+            userEmail = "another@web.de",
+            status = SubmissionStates.SUBMITTED,
+            turnInDate = Timestamp.from(Instant.now().minusSeconds(60)),
+            projectID = 2,
+            expirationDate = Timestamp.from(Instant.now().plusSeconds(6000))
+        )
+        val submissions = listOf(commonSubmission, commonSubmission2)
+
+        every { submissionRepository.findAll() } returns submissions
+
+        val result = submissionService.fetchAllSubmissions()
+
+        assertEquals(2, result.size)
+
+        assertEquals("user@web.de", result[0].userEmail)
+        assertEquals(SubmissionStates.SUBMITTED, result[0].status)
+        assertEquals(1, result[0].projectID)
+        assertNotNull(result[0].turnInDate)
+        assertNotNull(result[0].expirationDate)
+
+        assertEquals("another@web.de", result[1].userEmail)
+        assertEquals(SubmissionStates.SUBMITTED, result[1].status)
+        assertEquals(2, result[1].projectID)
+        assertNotNull(result[1].turnInDate)
+        assertNotNull(result[1].expirationDate)
+    }
+
+    @Test
+    fun  test_fetch_all_submissions_empty_submissions() {
+        every { submissionRepository.findAll() } returns emptyList()
+
+        val result = submissionService.fetchAllSubmissions()
+
+        assert(result.isEmpty())
     }
 }
