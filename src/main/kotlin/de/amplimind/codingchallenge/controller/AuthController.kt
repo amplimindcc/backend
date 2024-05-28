@@ -37,7 +37,7 @@ class AuthController(
     @Operation(summary = "Entry point for user login")
     @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
     @ApiResponse(responseCode = "403", description = "username or password is incorrect")
-    @PostMapping("/login")
+    @PostMapping("login")
     fun login(
         @RequestBody loginRequest: LoginRequestDTO,
         session: HttpSession,
@@ -62,7 +62,7 @@ class AuthController(
     @ApiResponse(responseCode = "404", description = "User does not exist")
     @ApiResponse(responseCode = "409", description = "Token was already used.")
     @ApiResponse(responseCode = "412", description = "password does not fulfill requirements")
-    @PostMapping("/register")
+    @PostMapping("register")
     fun invite(
         @RequestBody registerRequest: RegisterRequestDTO,
         session: HttpSession,
@@ -73,7 +73,7 @@ class AuthController(
     @Operation(summary = "Entry point to check if a user is logged in")
     @ApiResponse(responseCode = "200", description = "User is logged in, and the email of the user is provided")
     @ApiResponse(responseCode = "401", description = "User is not logged in")
-    @GetMapping("/check-login")
+    @GetMapping("check-login")
     fun checkLogin(): ResponseEntity<UserEmailResponseResponseDTO> {
         val isAuthenticated =
             SecurityContextHolder.getContext().authentication != null &&
@@ -91,7 +91,7 @@ class AuthController(
     @ApiResponse(responseCode = "400", description = "Token is invalid")
     @ApiResponse(responseCode = "403", description = "Token is expired")
     @ApiResponse(responseCode = "409", description = "Token was already used.")
-    @GetMapping("/check-token/{token}")
+    @GetMapping("check-token/{token}")
     fun checkTokenValidity(
         @PathVariable token: String,
     ): ResponseEntity<String> {

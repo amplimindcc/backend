@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/submission")
+@RequestMapping("/v1/submission/")
 class SubmissionController(
     private val submissionService: SubmissionService,
 ) {
@@ -26,7 +26,7 @@ class SubmissionController(
         responseCode = "400",
         description = "The submission was flagged as a zip bomb as it has a nested zip file or being too large.",
     )
-    @PostMapping("/submit")
+    @PostMapping("submit")
     fun submit(
         @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO,
     ): ResponseEntity<SubmissionInfoResponseDTO> {
@@ -36,7 +36,7 @@ class SubmissionController(
     @Operation(summary = "Endpoint for getting the linting result for a specific user.")
     @ApiResponse(responseCode = "200", description = "Get the linting results")
     @ApiResponse(responseCode = "404", description = "If there is no linting result for the requested user")
-    @GetMapping("/lint/{email}")
+    @GetMapping("lint/{email}")
     fun getLinterResult(
         @PathVariable email: String,
     ): ResponseEntity<LintResultResponseDTO> {
@@ -47,7 +47,7 @@ class SubmissionController(
     @ApiResponse(responseCode = "200", description = "Get the submission active info")
     @ApiResponse(responseCode = "401", description = "If this request was made without being logged in (authenticated)")
     @ApiResponse(responseCode = "404", description = "If there is no submission for the requesting user")
-    @GetMapping("/active")
+    @GetMapping("active")
     fun fetchSubmissionActiveInfo(): ResponseEntity<SubmissionActiveInfoDTO> {
         return ResponseEntity.ok(this.submissionService.fetchSubmissionActiveInfo())
     }
