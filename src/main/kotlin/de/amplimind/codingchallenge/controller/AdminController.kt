@@ -43,14 +43,14 @@ class AdminController(
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
-    @PostMapping("/project/add")
+    @PostMapping("project/add")
     fun addProject(
         @RequestBody createProjectRequest: CreateProjectRequestDTO,
     ) = this.projectService.addProject(createProjectRequest)
 
     @Operation(summary = "Endpoint for fetching all projects.")
     @ApiResponse(responseCode = "200", description = "All projects were fetched successfully.")
-    @GetMapping("/project/fetch/all")
+    @GetMapping("project/fetch/all")
     fun fetchAllProjects() = ResponseEntity.ok(this.projectService.fetchAllProjects())
 
     @Operation(summary = "Endpoint for fetching all infos for the users")
@@ -114,7 +114,7 @@ class AdminController(
     @Operation(summary = "Endpoint for changing the state of a submission to submitted")
     @ApiResponse(responseCode = "200", description = "Submission state was changed successfully.")
     @ApiResponse(responseCode = "404", description = "If the project for the provided id not found.")
-    @PutMapping("/change/project/active")
+    @PutMapping("change/project/active")
     fun changeProjectActive(
         @RequestBody changeProjectActiveStatusRequestDTO: ChangeProjectActiveStatusRequestDTO,
     ) = ResponseEntity.ok(this.projectService.changeProjectActive(changeProjectActiveStatusRequestDTO))
@@ -122,7 +122,7 @@ class AdminController(
     @Operation(summary = "Endpoint for changing the title of a project")
     @ApiResponse(responseCode = "200", description = "Project title was changed successfully.")
     @ApiResponse(responseCode = "404", description = "If the project for the provided id not found.")
-    @PutMapping("/change/project/title")
+    @PutMapping("change/project/title")
     fun changeProjectTitle(
         @RequestBody changeProjectTitleRequestDTO: ChangeProjectTitleRequestDTO,
     ) = ResponseEntity.ok(this.projectService.changeProjectTitle(changeProjectTitleRequestDTO))
@@ -131,7 +131,7 @@ class AdminController(
     @ApiResponse(responseCode = "200", description = "Project fetched successfully")
     @ApiResponse(responseCode = "404", description = "User does not have a project assigned")
     @ApiResponse(responseCode = "422", description = "Supplied email is not an email")
-    @GetMapping("/fetch/project/{email}")
+    @GetMapping("fetch/project/{email}")
     fun getUserProject(
         @PathVariable email: String,
     ): ResponseEntity<UserProjectResponseDTO> {
@@ -147,7 +147,7 @@ class AdminController(
     @ApiResponse(responseCode = "200", description = "Project downloaded successfully")
     @ApiResponse(responseCode = "404", description = "User project not found")
     @ApiResponse(responseCode = "422", description = "User not found")
-    @GetMapping("/download/project/{email}")
+    @GetMapping("download/project/{email}")
     fun downloadUserProject(
         @PathVariable email: String,
     ) {
@@ -157,7 +157,7 @@ class AdminController(
     @Operation(summary = "Endpoint for deleting a project.")
     @ApiResponse(responseCode = "200", description = "Project was deleted successfully")
     @ApiResponse(responseCode = "409", description = "Project won't be deleted as it is still in use")
-    @DeleteMapping("/project/{projectId}")
+    @DeleteMapping("project/{projectId}")
     fun deleteProject(
         @PathVariable projectId: Long,
     ) {
@@ -169,7 +169,7 @@ class AdminController(
     @ApiResponse(responseCode = "404", description = "User does not exist")
     @ApiResponse(responseCode = "409", description = "User is already registered and does not need a reinvite")
     @ApiResponse(responseCode = "422", description = "Email supplied was not an actual email")
-    @PostMapping("/resend/invite")
+    @PostMapping("resend/invite")
     fun resendInvite(
         @RequestBody inviteRequest: InviteRequestDTO,
     ): ResponseEntity<FullUserInfoResponseDTO> {
@@ -190,7 +190,7 @@ class AdminController(
 
     @Operation(summary = "Fetches all submissions")
     @ApiResponse(responseCode = "200", description = "All submissions fetched successfully")
-    @GetMapping("/submission/all")
+    @GetMapping("submission/all")
     fun fetchAllSubmissions(): ResponseEntity<List<SubmissionInfoResponseDTO>> {
         return ResponseEntity.ok(submissionService.fetchAllSubmissions())
     }

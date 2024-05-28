@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/v1/project")
+@RequestMapping("/v1/project/")
 class ProjectController(
     private val submissionService: SubmissionService,
     private val projectService: ProjectService,
@@ -21,7 +21,7 @@ class ProjectController(
     @ApiResponse(responseCode = "200", description = "Project fetched successfully")
     @ApiResponse(responseCode = "404", description = "User does not have a project assigned")
     @ApiResponse(responseCode = "422", description = "Supplied email is not an email")
-    @GetMapping("/fetch")
+    @GetMapping("fetch")
     fun getUserProject(): ResponseEntity<UserProjectResponseDTO> {
         val email: String = UserUtils.fetchLoggedInUser().username
         this.submissionService.setExpirationIfNotSet(email)
