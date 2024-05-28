@@ -117,6 +117,10 @@ class SubmissionService(
         return submission.projectID
     }
 
+    fun getSubmissionsByEmail(email: String): Submission? {
+        return submissionRepository.findByUserEmail(email)
+    }
+
     /**
      * sets the expiration date of a submission when the user fetches it for the first time
      * @param email email of the user

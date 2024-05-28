@@ -19,6 +19,8 @@ import de.amplimind.codingchallenge.utils.ValidationUtils
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.ResponseEntity
+import org.springframework.http.HttpStatus
+import org.springframework.http.HttpHeaders
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -28,6 +30,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.core.io.ByteArrayResource
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
 
 /**
  * Controller for admin related tasks.
@@ -143,15 +151,32 @@ class AdminController(
         )
     }
 
-    @Operation(summary = "Download project of user")
-    @ApiResponse(responseCode = "200", description = "Project downloaded successfully")
-    @ApiResponse(responseCode = "404", description = "User project not found")
-    @ApiResponse(responseCode = "422", description = "User not found")
-    @GetMapping("/download/project/{email}")
-    fun downloadUserProject(
+    @Operation(summary = "Endpoint for downloading submissions of user")
+    @ApiResponse(responseCode = "200", description = "Submissions downloaded successfully")
+    @ApiResponse(responseCode = "404", description = "Submission of user with given email not found")
+    @ApiResponse(responseCode = "422", description = "Email supplied not found")
+    @GetMapping("/download/submission/{email}")
+    fun downloadUserSubmission(
         @PathVariable email: String,
-    ) {
-        // TODO Wait until upload is done
+    ): ResponseEntity<ByteArrayResource> {
+        ValidationUtils.validateEmail(email)
+
+        val submission = this.submissionService.getSubmissionsByEmail(email)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "No submission found for user with email: $email")
+        
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        ZipOutputStream(byteArrayOutputStream).use {zipOut ->
+            val fileName = "submission_${submission.userEmail}.txt"
+            zipOut.putNextEntry(ZipEntry(fileName))
+            zipOut.write(submission.toString().toByteArray(StandardCharsets.UTF_8))
+            zipOut.closeEntry()
+        }
+        val zipFileName = "submission_${email}.zip"
+        val resource = ByteArrayResource(byteArrayOutputStream.toByteArray())
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$zipFileName\"")
+            .header(HttpHeaders.CONTENT_TYPE, "application/zip")
+            .body(resource)
     }
 
     @Operation(summary = "Endpoint for deleting a project.")
