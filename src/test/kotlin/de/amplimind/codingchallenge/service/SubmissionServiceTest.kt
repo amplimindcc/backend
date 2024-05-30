@@ -20,11 +20,11 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import io.mockk.just
 import io.mockk.mockkObject
 import io.mockk.slot
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -511,21 +511,23 @@ internal class SubmissionServiceTest {
      */
     @Test
     fun test_fetch_all_submissions() {
-        val commonSubmission = Submission(
-            userEmail = "user@web.de",
-            status = SubmissionStates.SUBMITTED,
-            turnInDate = Timestamp.from(Instant.now().minusSeconds(60)),
-            projectID = 1,
-            expirationDate = Timestamp.from(Instant.now().plusSeconds(6000))
-        )
+        val commonSubmission =
+            Submission(
+                userEmail = "user@web.de",
+                status = SubmissionStates.SUBMITTED,
+                turnInDate = Timestamp.from(Instant.now().minusSeconds(60)),
+                projectID = 1,
+                expirationDate = Timestamp.from(Instant.now().plusSeconds(6000)),
+            )
 
-        val commonSubmission2 = Submission(
-            userEmail = "another@web.de",
-            status = SubmissionStates.SUBMITTED,
-            turnInDate = Timestamp.from(Instant.now().minusSeconds(60)),
-            projectID = 2,
-            expirationDate = Timestamp.from(Instant.now().plusSeconds(6000))
-        )
+        val commonSubmission2 =
+            Submission(
+                userEmail = "another@web.de",
+                status = SubmissionStates.SUBMITTED,
+                turnInDate = Timestamp.from(Instant.now().minusSeconds(60)),
+                projectID = 2,
+                expirationDate = Timestamp.from(Instant.now().plusSeconds(6000)),
+            )
         val submissions = listOf(commonSubmission, commonSubmission2)
 
         every { submissionRepository.findAll() } returns submissions
@@ -551,7 +553,7 @@ internal class SubmissionServiceTest {
      * Test that when submissions are empty result is empty
      */
     @Test
-    fun  test_fetch_all_submissions_empty_submissions() {
+    fun test_fetch_all_submissions_empty_submissions() {
         every { submissionRepository.findAll() } returns emptyList()
 
         val result = submissionService.fetchAllSubmissions()

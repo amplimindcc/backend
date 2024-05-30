@@ -1,6 +1,25 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
-import de.amplimind.codingchallenge.exceptions.*
+import de.amplimind.codingchallenge.exceptions.EmailFormatException
+import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
+import de.amplimind.codingchallenge.exceptions.InvalidTokenException
+import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
+import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
+import de.amplimind.codingchallenge.exceptions.PasswordValidationException
+import de.amplimind.codingchallenge.exceptions.ProjectInUseException
+import de.amplimind.codingchallenge.exceptions.RateLimitException
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.RetryMethodException
+import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
+import de.amplimind.codingchallenge.exceptions.SubmissionException
+import de.amplimind.codingchallenge.exceptions.TokenAlreadyUsedException
+import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
+import de.amplimind.codingchallenge.exceptions.TriggerWorkflowException
+import de.amplimind.codingchallenge.exceptions.UnzipException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyExistsException
+import de.amplimind.codingchallenge.exceptions.UserAlreadyRegisteredException
+import de.amplimind.codingchallenge.exceptions.UserSelfDeleteException
+import de.amplimind.codingchallenge.exceptions.ZipBombException
 import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

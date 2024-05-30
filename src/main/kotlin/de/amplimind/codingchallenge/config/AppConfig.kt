@@ -1,6 +1,10 @@
 package de.amplimind.codingchallenge.config
 
-import de.amplimind.codingchallenge.model.*
+import de.amplimind.codingchallenge.model.Project
+import de.amplimind.codingchallenge.model.Submission
+import de.amplimind.codingchallenge.model.SubmissionStates
+import de.amplimind.codingchallenge.model.User
+import de.amplimind.codingchallenge.model.UserRole
 import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
@@ -150,7 +154,7 @@ class AppConfig(
                     title = "Test Project",
                     description = "This is a test description",
                     active = true,
-                    version = 0
+                    version = 0,
                 )
 
             val project2 =
@@ -158,7 +162,7 @@ class AppConfig(
                     title = "Test Project 2",
                     description = "This is a test description",
                     active = false,
-                    version = 0
+                    version = 0,
                 )
 
             this.projectRepository.saveAll(listOf(project1, project2))
