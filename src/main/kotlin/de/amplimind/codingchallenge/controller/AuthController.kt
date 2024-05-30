@@ -36,7 +36,7 @@ class AuthController(
     @WithRateLimit
     @Operation(summary = "Entry point for user login")
     @ApiResponse(responseCode = "200", description = "User logged in successfully, and the session id has been supplied successfully")
-    @ApiResponse(responseCode = "403", description = "username or password is incorrect")
+    @ApiResponse(responseCode = "404", description = "username or password is incorrect")
     @PostMapping("login")
     fun login(
         @RequestBody loginRequest: LoginRequestDTO,

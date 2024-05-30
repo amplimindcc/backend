@@ -74,6 +74,7 @@ class ProjectService(
      * @param id the id of the project to be deleted
      */
     fun deleteProject(id: Long) {
+        this.projectRepository.findById(id).orElseThrow { ResourceNotFoundException("Project with id $id not found.") }
         if (this.submissionRepository.findByProjectID(id).isNotEmpty()) {
             throw ProjectInUseException("Project is still in use!")
         }

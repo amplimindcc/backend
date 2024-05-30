@@ -156,6 +156,7 @@ class AdminController(
 
     @Operation(summary = "Endpoint for deleting a project.")
     @ApiResponse(responseCode = "200", description = "Project was deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Project not found")
     @ApiResponse(responseCode = "409", description = "Project won't be deleted as it is still in use")
     @DeleteMapping("project/{projectId}")
     fun deleteProject(

@@ -154,6 +154,7 @@ class AppConfig(
                     title = "Test Project",
                     description = "This is a test description",
                     active = true,
+                    version = 0,
                 )
 
             val project2 =
@@ -161,6 +162,7 @@ class AppConfig(
                     title = "Test Project 2",
                     description = "This is a test description",
                     active = false,
+                    version = 0,
                 )
 
             this.projectRepository.saveAll(listOf(project1, project2))

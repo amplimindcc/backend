@@ -91,6 +91,11 @@ class GlobalExceptionHandler {
         return ResponseEntity("Error whilst deleting project: ${ex.message}", HttpStatus.CONFLICT)
     }
 
+    @ExceptionHandler(NoSuchElementException::class)
+    fun handleProjectDoesNotExistException(ex: java.util.NoSuchElementException): ResponseEntity<String> {
+        return ResponseEntity("Error whilst deleting project: ${ex.message}", HttpStatus.NOT_FOUND)
+    }
+
     @ExceptionHandler(TooLateSubmissionException::class)
     fun handleTooLateSubmission(ex: TooLateSubmissionException): ResponseEntity<String> {
         return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.CONFLICT)
