@@ -29,16 +29,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito
-import org.mockito.Mockito.mock
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.mock.web.MockMultipartFile
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.web.multipart.MultipartFile
 import retrofit2.Call
 import retrofit2.Response
@@ -72,7 +67,7 @@ internal class SubmissionServiceTest {
     private lateinit var pushFileResponse: Response<PushFileResponse>
 
     @MockK
-    private lateinit var  triggerWorkflowResponse: Response<Void>
+    private lateinit var triggerWorkflowResponse: Response<Void>
 
     @MockK
     private lateinit var deleteRepositoryResponse: Response<Void>
@@ -125,11 +120,12 @@ internal class SubmissionServiceTest {
                 expirationDate = Timestamp.from(Instant.now().plus(Duration.ofHours(1))),
             )
 
-        val unzipCodeMap: Map<String, String> = mapOf(
-            "file1" to "code1",
-            "file2" to "code2",
-            "file3" to "code3"
-        )
+        val unzipCodeMap: Map<String, String> =
+            mapOf(
+                "file1" to "code1",
+                "file2" to "code2",
+                "file3" to "code3",
+            )
 
         every { submissionRepository.findByUserEmail(any()) } returns submission
 
@@ -163,11 +159,12 @@ internal class SubmissionServiceTest {
                 expirationDate = Timestamp.from(Instant.now().plus(Duration.ofHours(1))),
             )
 
-        val unzipCodeMap: Map<String, String> = mapOf(
-            "file1" to "code1",
-            "file2" to "code2",
-            "file3" to "code3"
-        )
+        val unzipCodeMap: Map<String, String> =
+            mapOf(
+                "file1" to "code1",
+                "file2" to "code2",
+                "file3" to "code3",
+            )
 
         every { submissionRepository.findByUserEmail(any()) } returns submission
 
