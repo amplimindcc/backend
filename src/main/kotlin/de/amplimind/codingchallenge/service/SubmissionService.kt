@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
@@ -58,7 +59,7 @@ class SubmissionService(
         val newTurnInDate = Timestamp(System.currentTimeMillis())
 
         if (submissionExpirationDate != null) {
-            if (TimeUnit.MICROSECONDS.toDays(submissionExpirationDate.time - newTurnInDate.time) <= 0) {
+            if(newTurnInDate.after(submissionExpirationDate)) {
                 throw TooLateSubmissionException("Too late Submission. Submission was due $submissionExpirationDate")
             }
         }

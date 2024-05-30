@@ -1,20 +1,49 @@
 package de.amplimind.codingchallenge.service
 
+import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
+import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
+import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
-import io.mockk.*
+import de.amplimind.codingchallenge.submission.CreateRepoResponse
+import de.amplimind.codingchallenge.submission.GitHubApiClient
+import de.amplimind.codingchallenge.submission.PushFileResponse
+import de.amplimind.codingchallenge.utils.UserUtils
+import de.amplimind.codingchallenge.utils.ZipUtils
+import de.amplimind.codingchallenge.utils.ZipUtils.unzipCode
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import io.mockk.just
+import io.mockk.mockkObject
+import io.mockk.slot
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
+import org.mockito.Mockito.mock
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContext
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.web.multipart.MultipartFile
+import retrofit2.Call
+import retrofit2.Response
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -25,16 +54,320 @@ internal class SubmissionServiceTest {
     private lateinit var submissionRepository: SubmissionRepository
 
     @MockK
-    private lateinit var gitHubService: GitHubService
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @MockK
-    private lateinit var eventPublisher: ApplicationEventPublisher
+    private lateinit var gitHubApiClient: GitHubApiClient
+
+    @MockK
+    private lateinit var getSubmissionRepositoryCall: Call<Result<String>>
+
+    @MockK
+    private lateinit var getSubmissionRepositoryResponse: Response<Result<String>>
+
+    @MockK
+    private lateinit var createRepoResponse: Response<CreateRepoResponse>
+
+    @MockK
+    private lateinit var pushFileResponse: Response<PushFileResponse>
+
+    @MockK
+    private lateinit var  triggerWorkflowResponse: Response<Void>
+
+    @MockK
+    private lateinit var deleteRepositoryResponse: Response<Void>
+
+    @MockK
+    private lateinit var multipartFile: MultipartFile
+
+    @MockK
+    private lateinit var userUtils: UserUtils
+
+    @MockK
+    private lateinit var zipUtils: ZipUtils
+
+    @MockK
+    private lateinit var userDetails: UserDetails
+
+    @MockK
+    private lateinit var authentication: Authentication
+
+    @MockK
+    private lateinit var securityContext: SecurityContext
+
+    @InjectMockKs
+    private lateinit var gitHubService: GitHubService
 
     @InjectMockKs
     private lateinit var submissionService: SubmissionService
 
     @BeforeEach
     fun setUp() = MockKAnnotations.init(this)
+
+    fun init_mocks_test_submit_code(): SubmitSolutionRequestDTO {
+        every { securityContext.authentication } returns authentication
+        SecurityContextHolder.setContext(securityContext)
+        every { authentication.principal } returns userDetails
+        every { userDetails.username } returns "user@web.de"
+
+        val description = "Sample description"
+        val language = "Kotlin"
+        val version = "1.0"
+        val zipFileContent = multipartFile
+        val submitSolutionRequestDTO = SubmitSolutionRequestDTO(description, language, version, zipFileContent)
+
+        val submission =
+            Submission(
+                userEmail = "user@web.de",
+                status = SubmissionStates.IN_IMPLEMENTATION,
+                turnInDate = Timestamp.from(Instant.now()),
+                projectID = 1,
+                expirationDate = Timestamp.from(Instant.now().plus(Duration.ofHours(1))),
+            )
+
+        val unzipCodeMap: Map<String, String> = mapOf(
+            "file1" to "code1",
+            "file2" to "code2",
+            "file3" to "code3"
+        )
+
+        every { submissionRepository.findByUserEmail(any()) } returns submission
+
+        mockkObject(ZipUtils)
+        every { ZipUtils.unzipCode(any()) } returns unzipCodeMap
+        return submitSolutionRequestDTO
+    }
+
+    /**
+     * Test that a submission is submitted.
+     */
+    @Test
+    fun test_submit_code() {
+        every { securityContext.authentication } returns authentication
+        SecurityContextHolder.setContext(securityContext)
+        every { authentication.principal } returns userDetails
+        every { userDetails.username } returns "user@web.de"
+
+        val description = "Sample description"
+        val language = "Kotlin"
+        val version = "1.0"
+        val zipFileContent = multipartFile
+        val submitSolutionRequestDTO = SubmitSolutionRequestDTO(description, language, version, zipFileContent)
+
+        val submission =
+            Submission(
+                userEmail = "user@web.de",
+                status = SubmissionStates.IN_IMPLEMENTATION,
+                turnInDate = Timestamp.from(Instant.now()),
+                projectID = 1,
+                expirationDate = Timestamp.from(Instant.now().plus(Duration.ofHours(1))),
+            )
+
+        val unzipCodeMap: Map<String, String> = mapOf(
+            "file1" to "code1",
+            "file2" to "code2",
+            "file3" to "code3"
+        )
+
+        every { submissionRepository.findByUserEmail(any()) } returns submission
+
+        mockkObject(ZipUtils)
+        every { ZipUtils.unzipCode(any()) } returns unzipCodeMap
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
+        every { pushFileResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.triggerWorkflow(any(), any(), any()) } returns triggerWorkflowResponse
+        every { triggerWorkflowResponse.isSuccessful } returns true
+
+        val savedSubmissionSlot = slot<Submission>()
+
+        every { submissionRepository.save(capture(savedSubmissionSlot)) } returns any()
+
+        every { eventPublisher.publishEvent(any()) } just Runs
+
+        val updatedSubmission = this.submissionService.submitCode(submitSolutionRequestDTO)
+
+        val savedSubmission = savedSubmissionSlot.captured
+        assert(savedSubmission.userEmail == submission.userEmail)
+        assert(savedSubmission.status == SubmissionStates.SUBMITTED)
+        assert(savedSubmission.turnInDate == submission.turnInDate)
+        assert(savedSubmission.projectID == submission.projectID)
+        assert(savedSubmission.expirationDate == submission.expirationDate)
+
+        assert(updatedSubmission.userEmail == submission.userEmail)
+        assert(updatedSubmission.status == SubmissionStates.SUBMITTED)
+        assert(updatedSubmission.turnInDate == submission.turnInDate)
+        assert(updatedSubmission.projectID == submission.projectID)
+        assert(updatedSubmission.expirationDate == submission.expirationDate)
+    }
+
+    /**
+     * Test that an exception is thrown if the submission is not in the correct state.
+     */
+    @Test
+    fun test_submit_code_failure_state_not_in_implementation() {
+        every { securityContext.authentication } returns authentication
+        SecurityContextHolder.setContext(securityContext)
+        every { authentication.principal } returns userDetails
+        every { userDetails.username } returns "user@web.de"
+
+        val description = "Sample description"
+        val language = "Kotlin"
+        val version = "1.0"
+        val zipFileContent = multipartFile
+        val submitSolutionRequestDTO = SubmitSolutionRequestDTO(description, language, version, zipFileContent)
+
+        val submission =
+            Submission(
+                userEmail = "user@web.de",
+                status = SubmissionStates.SUBMITTED,
+                turnInDate = Timestamp.from(Instant.now()),
+                projectID = 1,
+                expirationDate = Timestamp.from(Instant.now().plus(Duration.ofHours(1))),
+            )
+
+        every { submissionRepository.findByUserEmail(any()) } returns submission
+
+        assertThrows<IllegalStateException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if the submission was too late.
+     */
+    @Test
+    fun test_submit_code_failure_submission_too_late() {
+        every { securityContext.authentication } returns authentication
+        SecurityContextHolder.setContext(securityContext)
+        every { authentication.principal } returns userDetails
+        every { userDetails.username } returns "user@web.de"
+
+        val description = "Sample description"
+        val language = "Kotlin"
+        val version = "1.0"
+        val zipFileContent = multipartFile
+        val submitSolutionRequestDTO = SubmitSolutionRequestDTO(description, language, version, zipFileContent)
+
+        val submission =
+            Submission(
+                userEmail = "user@web.de",
+                status = SubmissionStates.IN_IMPLEMENTATION,
+                turnInDate = Timestamp.from(Instant.now()),
+                projectID = 1,
+                expirationDate = Timestamp.from(Instant.now().minus(Duration.ofHours(1))),
+            )
+
+        every { submissionRepository.findByUserEmail(any()) } returns submission
+
+        assertThrows<TooLateSubmissionException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if the submission repository with the user's name already exists.
+     */
+    @Test
+    fun test_submit_code_failure_repository_already_exists() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns true
+
+        assertThrows<SolutionAlreadySubmittedException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if creating the submission repository fails.
+     */
+    @Test
+    fun test_submit_code_failure_create_repo() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if pushing files to the submission repository fails.
+     */
+    @Test
+    fun test_submit_code_failure_push_file_call() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
+        every { pushFileResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if triggering the linting workflow of the submission repository fails.
+     */
+    @Test
+    fun test_submit_code_failure_trigger_linting_workflow() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
+        every { pushFileResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.triggerWorkflow(any(), any(), any()) } returns triggerWorkflowResponse
+        every { triggerWorkflowResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if deleting the submission repository fails.
+     */
+    @Test
+    fun test_submit_code_failure_delete_repository() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
+        every { pushFileResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.triggerWorkflow(any(), any(), any()) } returns triggerWorkflowResponse
+        every { triggerWorkflowResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.deleteRepository(any()) } returns deleteRepositoryResponse
+        every { deleteRepositoryResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
 
     /**
      * Test that a submission state is changed to reviewed.
