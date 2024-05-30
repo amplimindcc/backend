@@ -287,7 +287,7 @@ internal class SubmissionServiceTest {
      * Test that an exception is thrown if creating the submission repository fails.
      */
     @Test
-    fun test_submit_code_failure_create_repo() {
+    fun test_submit_code_failure_create_repo_api_call_fails() {
         val submitSolutionRequestDTO = init_mocks_test_submit_code()
 
         every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
@@ -304,7 +304,7 @@ internal class SubmissionServiceTest {
      * Test that an exception is thrown if pushing files to the submission repository fails.
      */
     @Test
-    fun test_submit_code_failure_push_file_call() {
+    fun test_submit_code_failure_push_file_api_call_fails() {
         val submitSolutionRequestDTO = init_mocks_test_submit_code()
 
         every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
@@ -324,7 +324,7 @@ internal class SubmissionServiceTest {
      * Test that an exception is thrown if triggering the linting workflow of the submission repository fails.
      */
     @Test
-    fun test_submit_code_failure_trigger_linting_workflow() {
+    fun test_submit_code_failure_trigger_linting_workflow_api_call_fails() {
         val submitSolutionRequestDTO = init_mocks_test_submit_code()
 
         every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
@@ -347,7 +347,7 @@ internal class SubmissionServiceTest {
      * Test that an exception is thrown if deleting the submission repository fails.
      */
     @Test
-    fun test_submit_code_failure_delete_repository() {
+    fun test_submit_code_failure_delete_repository_api_call_fails() {
         val submitSolutionRequestDTO = init_mocks_test_submit_code()
 
         every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
