@@ -19,15 +19,19 @@ import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
 import org.springframework.security.authentication.AuthenticationProvider
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
@@ -67,6 +71,12 @@ internal class UserServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        mockkStatic(SecurityContextHolder::class)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
     }
 
     /**
@@ -114,6 +124,7 @@ internal class UserServiceTest {
      */
     @Test
     fun test_successfullyDeletesUser() {
+        val adminMail = "admin@web.de"
         val emailToUse = "user@web.de"
         val user =
             User(
@@ -129,6 +140,18 @@ internal class UserServiceTest {
                 expirationDate = java.sql.Timestamp(System.currentTimeMillis()),
                 turnInDate = java.sql.Timestamp(System.currentTimeMillis()),
             )
+
+        val email =
+            mockk<Authentication> {
+                every { name } returns adminMail
+            }
+
+        val securityContext =
+            mockk<SecurityContext> {
+                every { authentication } returns email
+            }
+
+        every { SecurityContextHolder.getContext() } returns securityContext
 
         every { userRepository.findByEmail(emailToUse) } returns user
         every { submissionRepository.findByUserEmail(emailToUse) } returns submission
@@ -149,6 +172,18 @@ internal class UserServiceTest {
     fun test_userNotFound() {
         val emailToUse = "unknown@web.de"
 
+        val email =
+            mockk<Authentication> {
+                every { name } returns "other@web.de"
+            }
+
+        val securityContext =
+            mockk<SecurityContext> {
+                every { authentication } returns email
+            }
+
+        every { SecurityContextHolder.getContext() } returns securityContext
+
         every { userRepository.findByEmail(emailToUse) } returns null
         every { submissionRepository.findByUserEmail(emailToUse) } returns null
 
@@ -167,11 +202,23 @@ internal class UserServiceTest {
                 password = "password",
                 role = UserRole.ADMIN,
             )
+
+        val email =
+            mockk<Authentication> {
+                every { name } returns emailToUse
+            }
+
+        val securityContext =
+            mockk<SecurityContext> {
+                every { authentication } returns email
+            }
+
+        every { SecurityContextHolder.getContext() } returns securityContext
+
         every { userRepository.findByEmail(emailToUse) } returns user
         every { submissionRepository.findByUserEmail(emailToUse) } returns null
         every { userRepository.delete(user) } just Runs
-
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(emailToUse, null)
+        every { inviteTokenExpirationService.deleteEntryForUser(emailToUse) } just Runs
 
         assertThrows<UserSelfDeleteException> { userService.deleteUserByEmail(emailToUse) }
     }
