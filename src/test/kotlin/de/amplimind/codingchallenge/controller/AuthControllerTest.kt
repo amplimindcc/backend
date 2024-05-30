@@ -84,7 +84,7 @@ internal class AuthControllerTest
         }
 
         /**
-         * Test that an invalid username returns error 403
+         * Test that an invalid username returns error 404
          */
         @Order(2)
         @Test
@@ -99,7 +99,7 @@ internal class AuthControllerTest
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(request)
             }.andExpect {
-                status { isConflict() }
+                status { isNotFound() }
             }
         }
 
