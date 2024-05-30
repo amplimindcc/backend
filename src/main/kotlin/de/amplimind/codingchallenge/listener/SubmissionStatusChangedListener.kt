@@ -21,7 +21,7 @@ class SubmissionStatusChangedListener {
     }
 
     @EventListener
-    fun obSubmissionStatusChangedEvent(event: SubmissionStatusChangedEvent) {
+    fun onSubmissionStatusChangedEvent(event: SubmissionStatusChangedEvent) {
         val deadEmitters = mutableSetOf<SseEmitter>()
         for (emitter in emitters) {
             try {
@@ -30,6 +30,7 @@ class SubmissionStatusChangedListener {
                 deadEmitters.add(emitter)
             }
         }
+        //Remove dead emitter from the active pool
         emitters.removeAll(deadEmitters)
     }
 
@@ -46,6 +47,7 @@ class SubmissionStatusChangedListener {
                     deadEmitters.add(it)
                 }
             }
+            //Remove dead emitters from the active pool
             emitters.removeAll(deadEmitters)
         }, 0, 15, TimeUnit.SECONDS)
     }
