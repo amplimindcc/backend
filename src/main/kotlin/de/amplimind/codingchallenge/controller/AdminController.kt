@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
 import de.amplimind.codingchallenge.config.SecurityConfig
+import de.amplimind.codingchallenge.config.AppConfig
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
@@ -40,6 +41,7 @@ class AdminController(
     private val submissionService: SubmissionService,
     private val inviteTokenExpirationService: InviteTokenExpirationService,
     private val submissionStatusChangedListener: SubmissionStatusChangedListener,
+    private val appConfig: AppConfig,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
@@ -141,6 +143,18 @@ class AdminController(
                 this.submissionService.getProjectIdOfUser(email),
             ),
         )
+    }
+
+    @Operation(summary = "Fetch link to github Action of Linter")
+    @ApiResponse(responseCode = "200", description = "Github link retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Link with given email couldn't be found")
+    @PutMapping("fetch/link/{email}")
+    fun getUserLink(
+        @PathVariable email: String,
+    ): ResponseEntity<String> {
+        val repo = email.replace("@", ".")
+        val link = "https://github.com/${appConfig.organizationName}/$repo"
+        return ResponseEntity.ok(link)
     }
 
     @Operation(summary = "Download project of user")
