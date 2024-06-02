@@ -145,10 +145,9 @@ class AdminController(
         )
     }
 
-    @Operation(summary = "Fetch link to github Action of Linter")
-    @ApiResponse(responseCode = "200", description = "Github link retrieved successfully")
-    @ApiResponse(responseCode = "404", description = "Link with given email couldn't be found")
-    @PutMapping("fetch/link/{email}")
+    @Operation(summary = "Fetch the url of the repository for the provided user email")
+    @ApiResponse(responseCode = "200", description = "URL of the repository fetched successfully")
+    @GetMapping("fetch/repo/url/{email}")
     fun getUserLink(
         @PathVariable email: String,
     ): ResponseEntity<String> {
