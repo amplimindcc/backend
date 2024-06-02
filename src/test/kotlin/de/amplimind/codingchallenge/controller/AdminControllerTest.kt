@@ -389,4 +389,15 @@ internal class AdminControllerTest
                 status { isUnprocessableEntity() }
             }
         }
+
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_fetch_fetch_repo_url() {
+
+            val userEmail = "user@web.de"
+
+            this.mockMvc.get("/v1/admin/fetch/repo/url/$userEmail").andExpect {
+                status { isOk() }
+            }
+        }
     }

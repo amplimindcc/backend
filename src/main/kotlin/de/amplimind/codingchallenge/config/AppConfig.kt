@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.beans.factory.annotation.Value
 import java.sql.Timestamp
 
 @Configuration
@@ -26,6 +27,9 @@ class AppConfig(
     private val submissionRepository: SubmissionRepository,
     private val projectRepository: ProjectRepository,
 ) {
+    @Value("\${spring.custom.organization.name}")
+    lateinit var organizationName: String
+
     @Bean
     fun userDetailsService(): UserDetailsService {
         return UserDetailsService {
