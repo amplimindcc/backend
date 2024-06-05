@@ -362,36 +362,6 @@ internal class AdminControllerTest
 
         @Test
         @WithMockUser(username = "admin", roles = ["ADMIN"])
-        fun test_download_user_project_success() {
-            val email = "user@web.de"
-
-            this.mockMvc.get("/v1/admin/download/project/$email").andExpect {
-                status { isOk() }
-            }
-        }
-
-        @Test
-        @WithMockUser(username = "admin", roles = ["ADMIN"])
-        fun test_download_user_project_failure_user_not_found() {
-            val email = "unknown@web.de"
-
-            this.mockMvc.get("/v1/admin/download/project/$email").andExpect {
-                status { isNotFound() }
-            }
-        }
-
-        @Test
-        @WithMockUser(username = "admin", roles = ["ADMIN"])
-        fun test_download_user_project_failure_project_not_found() {
-            val email = "init@web.de"
-
-            this.mockMvc.get("/v1/admin/download/project/$email").andExpect {
-                status { isUnprocessableEntity() }
-            }
-        }
-
-        @Test
-        @WithMockUser(username = "admin", roles = ["ADMIN"])
         fun test_fetch_fetch_repo_url() {
 
             val userEmail = "user@web.de"

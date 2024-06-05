@@ -156,17 +156,6 @@ class AdminController(
         return ResponseEntity.ok(link)
     }
 
-    @Operation(summary = "Download project of user")
-    @ApiResponse(responseCode = "200", description = "Project downloaded successfully")
-    @ApiResponse(responseCode = "404", description = "User project not found")
-    @ApiResponse(responseCode = "422", description = "User not found")
-    @GetMapping("download/project/{email}")
-    fun downloadUserProject(
-        @PathVariable email: String,
-    ) {
-        // TODO Wait until upload is done
-    }
-
     @Operation(summary = "Endpoint for deleting a project.")
     @ApiResponse(responseCode = "200", description = "Project was deleted successfully")
     @ApiResponse(responseCode = "404", description = "Project not found")
