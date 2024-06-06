@@ -5,6 +5,7 @@ import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
 import de.amplimind.codingchallenge.exceptions.NoAuthenticationException
+import de.amplimind.codingchallenge.exceptions.NotSubmittedException
 import de.amplimind.codingchallenge.exceptions.PasswordValidationException
 import de.amplimind.codingchallenge.exceptions.ProjectInUseException
 import de.amplimind.codingchallenge.exceptions.RateLimitException
@@ -149,5 +150,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(RetryMethodException::class)
     fun handleRetryMethodException(ex: RetryMethodException): ResponseEntity<String> {
         return ResponseEntity("Method call failed: ${ex.message}", HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+
+    @ExceptionHandler(NotSubmittedException::class)
+    fun handleRetryMethodException(ex: NotSubmittedException): ResponseEntity<String> {
+        return ResponseEntity("${ex.message}", HttpStatus.BAD_REQUEST)
     }
 }

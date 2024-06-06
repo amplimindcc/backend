@@ -30,7 +30,7 @@ class SubmissionStatusChangedListener {
                 deadEmitters.add(emitter)
             }
         }
-        //Remove dead emitter from the active pool
+        // Remove dead emitter from the active pool
         emitters.removeAll(deadEmitters)
     }
 
@@ -47,7 +47,7 @@ class SubmissionStatusChangedListener {
                     deadEmitters.add(it)
                 }
             }
-            //Remove dead emitters from the active pool
+            // Remove dead emitters from the active pool
             emitters.removeAll(deadEmitters)
         }, 0, 15, TimeUnit.SECONDS)
     }
