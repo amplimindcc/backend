@@ -23,10 +23,18 @@ class SubmissionController(
     @Operation(summary = "Endpoint for submitting a solution.")
     @ApiResponse(responseCode = "200", description = "Solution was submitted successfully.")
     @ApiResponse(
-        responseCode = "400",
+        responseCode = "403",
         description = "The submission was flagged as a zip bomb as it has a nested zip file or being too large.",
     )
-    @ApiResponse(responseCode = "409", description = "Readme file was present which results in a conflict.")
+    @ApiResponse(responseCode = "409", description = "Submission Repository already exists")
+    @ApiResponse(
+        responseCode = "410",
+        description = "The submissions expiry date has been reached",
+    )
+    @ApiResponse(
+        responseCode = "422",
+        description = "README.md is found in zip file. This is forbidden as we already supply a README.md",
+    )
     @ApiResponse(responseCode = "500", description = "The problem occurred whilst pushing to the github repository.")
     @PostMapping("submit")
     fun submit(
