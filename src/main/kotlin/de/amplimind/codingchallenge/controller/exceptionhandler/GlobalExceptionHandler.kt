@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
 import de.amplimind.codingchallenge.exceptions.EmailFormatException
+import de.amplimind.codingchallenge.exceptions.FileTooBigException
 import de.amplimind.codingchallenge.exceptions.ForbiddenFileNameException
 import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
@@ -161,5 +162,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(ForbiddenFileNameException::class)
     fun handleForbiddenFileNameException(ex: ForbiddenFileNameException): ResponseEntity<String> {
         return ResponseEntity("${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
+    }
+
+    @ExceptionHandler(FileTooBigException::class)
+    fun handleFileTooBigException(ex: FileTooBigException): ResponseEntity<String> {
+        return ResponseEntity("${ex.message}", HttpStatus.PAYLOAD_TOO_LARGE)
     }
 }
