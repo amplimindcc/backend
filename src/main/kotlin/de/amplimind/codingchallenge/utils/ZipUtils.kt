@@ -85,7 +85,7 @@ object ZipUtils {
                     throw ZipBombException("Potential zip bomb detected: Nested zip files are not allowed!")
                 }
 
-                if (zipEntry!!.name.equals("README.md")) {
+                if (zipEntry!!.name.endsWith("README.md")) {
                     throw ForbiddenFileNameException("No README.md file is allowed to be in the directory root!")
                 }
 
