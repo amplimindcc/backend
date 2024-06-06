@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.utils
 
+import de.amplimind.codingchallenge.exceptions.ForbiddenFileNameException
 import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
 import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.exceptions.ZipBombException
@@ -82,6 +83,10 @@ object ZipUtils {
                 if (zipEntry!!.name.endsWith(".zip")) {
                     // nested zips are not allowed
                     throw ZipBombException("Potential zip bomb detected: Nested zip files are not allowed!")
+                }
+
+                if (zipEntry!!.name.equals("README.md")) {
+                    throw ForbiddenFileNameException("No README.md file is allowed to be in the directory root!")
                 }
 
                 size += zipEntry!!.size
