@@ -139,7 +139,7 @@ class AppConfig(
                     status = SubmissionStates.IN_IMPLEMENTATION,
                     turnInDate = Timestamp(System.currentTimeMillis()),
                     projectID = 1L,
-                    expirationDate = Timestamp(System.currentTimeMillis()),
+                    expirationDate = Timestamp(System.currentTimeMillis().plus(86400000 * 3L)),
                 )
 
             val submittedSubmission =
