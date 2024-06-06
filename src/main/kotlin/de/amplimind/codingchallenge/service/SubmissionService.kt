@@ -5,10 +5,12 @@ import de.amplimind.codingchallenge.dto.response.LintResultResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionActiveInfoDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.events.SubmissionStatusChangedEvent
+import de.amplimind.codingchallenge.exceptions.ForbiddenFileNameException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.exceptions.SolutionAlreadySubmittedException
 import de.amplimind.codingchallenge.exceptions.SubmissionException
 import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
+import de.amplimind.codingchallenge.exceptions.ZipBombException
 import de.amplimind.codingchallenge.extensions.DTOExtensions.toSumbissionInfoDTO
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.model.Submission
@@ -72,6 +74,12 @@ class SubmissionService(
             try {
                 gitHubService.pushToRepo(submitSolutionRequestDTO, userEmail)
                 gitHubService.triggerLintingWorkflow(repoName)
+            } catch (e: ForbiddenFileNameException) {
+                gitHubService.deleteSubmissionRepository(repoName)
+                throw e
+            } catch (e: ZipBombException) {
+                gitHubService.deleteSubmissionRepository(repoName)
+                throw e
             } catch (e: Exception) {
                 gitHubService.deleteSubmissionRepository(repoName)
                 throw SubmissionException("Submission failed: ${e.message}")
