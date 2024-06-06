@@ -100,7 +100,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(TooLateSubmissionException::class)
     fun handleTooLateSubmission(ex: TooLateSubmissionException): ResponseEntity<String> {
-        return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.CONFLICT)
+        return ResponseEntity("Error whilst submitting solution: ${ex.message}", HttpStatus.GONE)
     }
 
     @ExceptionHandler(SolutionAlreadySubmittedException::class)
@@ -135,7 +135,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(ZipBombException::class)
     fun handleZipBombException(ex: ZipBombException): ResponseEntity<String> {
-        return ResponseEntity("Zip Bomb detected: ${ex.message}", HttpStatus.BAD_REQUEST)
+        return ResponseEntity("Zip Bomb detected: ${ex.message}", HttpStatus.FORBIDDEN)
     }
 
     @ExceptionHandler(SubmissionException::class)
@@ -154,12 +154,12 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NotSubmittedException::class)
-    fun handleRetryMethodException(ex: NotSubmittedException): ResponseEntity<String> {
+    fun handleNotSubmittedException(ex: NotSubmittedException): ResponseEntity<String> {
         return ResponseEntity("${ex.message}", HttpStatus.BAD_REQUEST)
     }
 
     @ExceptionHandler(ForbiddenFileNameException::class)
-    fun handleRetryMethodException(ex: ForbiddenFileNameException): ResponseEntity<String> {
-        return ResponseEntity("${ex.message}", HttpStatus.CONFLICT)
+    fun handleForbiddenFileNameException(ex: ForbiddenFileNameException): ResponseEntity<String> {
+        return ResponseEntity("${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
     }
 }
