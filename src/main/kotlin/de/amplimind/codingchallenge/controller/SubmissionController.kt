@@ -27,6 +27,7 @@ class SubmissionController(
         description = "The submission was flagged as a zip bomb as it has a nested zip file or being too large.",
     )
     @ApiResponse(responseCode = "409", description = "Readme file was present which results in a conflict.")
+    @ApiResponse(responseCode = "500", description = "The problem occurred whilst pushing to the github repository.")
     @PostMapping("submit")
     fun submit(
         @ModelAttribute submitSolutionRequestDTO: SubmitSolutionRequestDTO,
