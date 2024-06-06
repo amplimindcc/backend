@@ -8,6 +8,7 @@ import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
 import de.amplimind.codingchallenge.dto.request.InviteRequestDTO
 import de.amplimind.codingchallenge.dto.response.DeletedUserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
+import de.amplimind.codingchallenge.dto.response.RepositoryUrlResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
@@ -159,7 +160,7 @@ class AdminController(
     @GetMapping("fetch/repo/url/{email}")
     fun getUserLink(
         @PathVariable email: String,
-    ): ResponseEntity<String> {
+    ): ResponseEntity<RepositoryUrlResponseDTO> {
         val repo = email.replace("@", ".")
         val userSubmission: Submission =
             submissionRepository.findByUserEmail(email)
@@ -168,7 +169,7 @@ class AdminController(
             throw NotSubmittedException("User has not submitted yet!")
         }
         val link = "https://github.com/${appConfig.organizationName}/$repo"
-        return ResponseEntity.ok(link)
+        return ResponseEntity.ok(RepositoryUrlResponseDTO(link))
     }
 
     @Operation(summary = "Endpoint for deleting a project.")
