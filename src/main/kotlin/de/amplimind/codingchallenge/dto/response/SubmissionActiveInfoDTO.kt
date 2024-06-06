@@ -11,5 +11,5 @@ import de.amplimind.codingchallenge.model.SubmissionStates
 class SubmissionActiveInfoDTO(
     val isStarted: Boolean,
     val isExpired: Boolean,
-    private val submissionStates: SubmissionStates,
+    val submissionStates: SubmissionStates,
 )
