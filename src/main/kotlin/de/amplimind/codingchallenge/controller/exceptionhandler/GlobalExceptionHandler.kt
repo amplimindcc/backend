@@ -1,6 +1,7 @@
 package de.amplimind.codingchallenge.controller.exceptionhandler
 
 import de.amplimind.codingchallenge.exceptions.EmailFormatException
+import de.amplimind.codingchallenge.exceptions.ForbiddenFileNameException
 import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
 import de.amplimind.codingchallenge.exceptions.InvalidTokenException
 import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
@@ -155,5 +156,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(NotSubmittedException::class)
     fun handleRetryMethodException(ex: NotSubmittedException): ResponseEntity<String> {
         return ResponseEntity("${ex.message}", HttpStatus.BAD_REQUEST)
+    }
+
+    @ExceptionHandler(ForbiddenFileNameException::class)
+    fun handleRetryMethodException(ex: ForbiddenFileNameException): ResponseEntity<String> {
+        return ResponseEntity("${ex.message}", HttpStatus.CONFLICT)
     }
 }
