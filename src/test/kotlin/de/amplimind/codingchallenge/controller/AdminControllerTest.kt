@@ -363,11 +363,30 @@ internal class AdminControllerTest
         @Test
         @WithMockUser(username = "admin", roles = ["ADMIN"])
         fun test_fetch_fetch_repo_url() {
-
-            val userEmail = "user@web.de"
+            val userEmail = "submitted@web.de"
 
             this.mockMvc.get("/v1/admin/fetch/repo/url/$userEmail").andExpect {
                 status { isOk() }
+            }
+        }
+
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_fetch_fetch_repo_url_user_not_existent() {
+            val userEmail = "notExistent@web.de"
+
+            this.mockMvc.get("/v1/admin/fetch/repo/url/$userEmail").andExpect {
+                status { isNotFound() }
+            }
+        }
+
+        @Test
+        @WithMockUser(username = "admin", roles = ["ADMIN"])
+        fun test_fetch_fetch_repo_url_user_has_not_submitted() {
+            val userEmail = "impl@web.de"
+
+            this.mockMvc.get("/v1/admin/fetch/repo/url/$userEmail").andExpect {
+                status { isBadRequest() }
             }
         }
     }

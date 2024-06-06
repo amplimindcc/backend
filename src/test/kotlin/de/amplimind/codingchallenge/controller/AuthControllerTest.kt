@@ -7,7 +7,11 @@ import de.amplimind.codingchallenge.repository.ProjectRepository
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.repository.UserRepository
 import de.amplimind.codingchallenge.utils.JWTUtils
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -21,7 +25,7 @@ import org.springframework.test.web.servlet.post
 import utils.TestDataInitializer
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 
 /**
  * Test class for [AuthControllerTest].

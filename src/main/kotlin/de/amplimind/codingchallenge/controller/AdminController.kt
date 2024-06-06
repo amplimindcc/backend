@@ -1,7 +1,7 @@
 package de.amplimind.codingchallenge.controller
 
-import de.amplimind.codingchallenge.config.SecurityConfig
 import de.amplimind.codingchallenge.config.AppConfig
+import de.amplimind.codingchallenge.config.SecurityConfig
 import de.amplimind.codingchallenge.dto.request.ChangeProjectActiveStatusRequestDTO
 import de.amplimind.codingchallenge.dto.request.ChangeProjectTitleRequestDTO
 import de.amplimind.codingchallenge.dto.request.CreateProjectRequestDTO
@@ -11,7 +11,13 @@ import de.amplimind.codingchallenge.dto.response.FullUserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.SubmissionInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserInfoResponseDTO
 import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
+import de.amplimind.codingchallenge.exceptions.NotSubmittedException
+import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
+import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.listener.SubmissionStatusChangedListener
+import de.amplimind.codingchallenge.model.Submission
+import de.amplimind.codingchallenge.model.SubmissionStates
+import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.service.InviteTokenExpirationService
 import de.amplimind.codingchallenge.service.ProjectService
 import de.amplimind.codingchallenge.service.SubmissionService
@@ -42,6 +48,7 @@ class AdminController(
     private val inviteTokenExpirationService: InviteTokenExpirationService,
     private val submissionStatusChangedListener: SubmissionStatusChangedListener,
     private val appConfig: AppConfig,
+    private val submissionRepository: SubmissionRepository,
 ) {
     @Operation(summary = "Endpoint for adding a new project.")
     @ApiResponse(responseCode = "200", description = "Project was added successfully.")
@@ -147,11 +154,19 @@ class AdminController(
 
     @Operation(summary = "Fetch the url of the repository for the provided user email")
     @ApiResponse(responseCode = "200", description = "URL of the repository fetched successfully")
+    @ApiResponse(responseCode = "404", description = "User does not exist!")
+    @ApiResponse(responseCode = "400", description = "User has not submitted yet!")
     @GetMapping("fetch/repo/url/{email}")
     fun getUserLink(
         @PathVariable email: String,
     ): ResponseEntity<String> {
         val repo = email.replace("@", ".")
+        val userSubmission: Submission =
+            submissionRepository.findByUserEmail(email)
+                ?: throw ResourceNotFoundException("User does not exist!")
+        if (userSubmission.status.matchesAny(SubmissionStates.INIT, SubmissionStates.IN_IMPLEMENTATION)) {
+            throw NotSubmittedException("User has not submitted yet!")
+        }
         val link = "https://github.com/${appConfig.organizationName}/$repo"
         return ResponseEntity.ok(link)
     }
