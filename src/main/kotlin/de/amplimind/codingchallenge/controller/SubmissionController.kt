@@ -37,11 +37,9 @@ class SubmissionController(
     @Operation(summary = "Endpoint for getting the linting result for a specific user.")
     @ApiResponse(responseCode = "200", description = "Get the linting results")
     @ApiResponse(responseCode = "404", description = "If there is no linting result for the requested user")
-    @GetMapping("lint/{email}")
-    fun getLinterResult(
-        @PathVariable email: String,
-    ): ResponseEntity<LintResultResponseDTO> {
-        return ResponseEntity.ok(this.submissionService.getLinterResponse(email))
+    @GetMapping("lint")
+    fun getLinterResult(): ResponseEntity<LintResultResponseDTO> {
+        return ResponseEntity.ok(this.submissionService.getLinterResponse())
     }
 
     @Operation(summary = "Endpoint for fetching the submission active info.")
