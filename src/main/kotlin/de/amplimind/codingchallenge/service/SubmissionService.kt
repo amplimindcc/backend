@@ -163,12 +163,11 @@ class SubmissionService(
 
     /**
      * Fetches the linting result of the user's submission
-     * @param mail the email of the user
      * @return the [LintResultResponseDTO] of the linting result
      */
-    fun getLinterResponse(mail: String): LintResultResponseDTO {
+    fun getLinterResponse(): LintResultResponseDTO {
         return runBlocking {
-            val linterResponse = gitHubService.getLintingResult(mail)
+            val linterResponse = gitHubService.getLintingResult(UserUtils.fetchLoggedInUser().username)
             linterResponse
         }
     }
