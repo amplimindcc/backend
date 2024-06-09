@@ -1,5 +1,6 @@
 package de.amplimind.codingchallenge.utils
 
+import de.amplimind.codingchallenge.exceptions.FileTooBigException
 import de.amplimind.codingchallenge.exceptions.ForbiddenFileNameException
 import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
 import de.amplimind.codingchallenge.exceptions.UnzipException
@@ -71,6 +72,9 @@ object ZipUtils {
      */
     @Throws(ZipBombException::class)
     fun checkZip(zipFile: MultipartFile) {
+        if (zipFile.size > MAX_FILE_SIZE) {
+            throw FileTooBigException("Max Upload size was exceeded!")
+        }
         var size = 0L
         val zipInputStream = ZipInputStream(zipFile.inputStream)
         zipInputStream.use { zis ->
