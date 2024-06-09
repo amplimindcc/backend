@@ -28,6 +28,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 
 /**
  * Globally used Advice for controller to unify the handling of exceptions and their responses.
@@ -164,8 +165,8 @@ class GlobalExceptionHandler {
         return ResponseEntity("${ex.message}", HttpStatus.UNPROCESSABLE_ENTITY)
     }
 
-    @ExceptionHandler(FileTooBigException::class)
-    fun handleFileTooBigException(ex: FileTooBigException): ResponseEntity<String> {
-        return ResponseEntity("${ex.message}", HttpStatus.PAYLOAD_TOO_LARGE)
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun handleFileTooBigException(ex: MaxUploadSizeExceededException): ResponseEntity<String> {
+        return ResponseEntity("Uploaded File is too big!", HttpStatus.PAYLOAD_TOO_LARGE)
     }
 }
