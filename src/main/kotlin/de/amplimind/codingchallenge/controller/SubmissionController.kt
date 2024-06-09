@@ -32,6 +32,10 @@ class SubmissionController(
         description = "The submissions expiry date has been reached",
     )
     @ApiResponse(
+        responseCode = "413",
+        description = "The zip file is already bigger then the allowed maximum",
+    )
+    @ApiResponse(
         responseCode = "422",
         description = "README.md is found in zip file. This is forbidden as we already supply a README.md",
     )
