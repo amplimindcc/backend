@@ -72,9 +72,6 @@ object ZipUtils {
      */
     @Throws(ZipBombException::class)
     fun checkZip(zipFile: MultipartFile) {
-        if (zipFile.size > MAX_FILE_SIZE) {
-            throw FileTooBigException("Max Upload size was exceeded!")
-        }
         var size = 0L
         val zipInputStream = ZipInputStream(zipFile.inputStream)
         zipInputStream.use { zis ->
