@@ -20,10 +20,14 @@ services:
 
   app:
     build: ./
+    depends_on:
+      - redis
+      - postgres
+    image: backend:latest
     container_name: backend
     volumes:
       - ./:/backend
     ports:
-      - 8080:8080
+      - "8080:8080"
     expose:
       - 8080
