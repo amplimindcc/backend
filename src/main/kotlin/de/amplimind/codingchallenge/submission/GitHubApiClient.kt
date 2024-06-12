@@ -53,8 +53,6 @@ interface GitHubApiClient {
         @Path("artifactId") artifactId: Int,
     ): Response<ResponseBody>
 
-    // blob
-
     @POST("/repos/amplimindcc/{repo}/git/blobs")
     suspend fun createBlob(
         @Path("repo") repo: String,
@@ -84,9 +82,7 @@ interface GitHubApiClient {
     suspend fun getGitTree(
         @Path("repo") repo: String,
         @Path("branch") branch: String,
-    ): Response<GetGitTreeResponse> // Define the response model accordingly
-
-    //
+    ): Response<GetGitTreeResponse>
 }
 
 @Serializable
@@ -148,10 +144,6 @@ data class UpdateBranchReferenceResponse(
     val url: String,
 )
 
-//
-
-// Requests
-
 @Serializable
 data class Artifact(
     val id: Int,
@@ -189,8 +181,6 @@ data class SubmissionGitHubRepository(
 data class WorkflowDispatch(
     val ref: String,
 )
-
-// Responses
 
 @Serializable
 data class PushFileResponse(
