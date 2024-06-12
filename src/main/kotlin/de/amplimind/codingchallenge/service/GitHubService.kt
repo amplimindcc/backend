@@ -8,7 +8,6 @@ import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
 import de.amplimind.codingchallenge.submission.Blob
 import de.amplimind.codingchallenge.submission.Committer
-import de.amplimind.codingchallenge.submission.CreateBlobResponse
 import de.amplimind.codingchallenge.submission.CreateCommitRequest
 import de.amplimind.codingchallenge.submission.CreateRepoResponse
 import de.amplimind.codingchallenge.submission.CreateTreeRequest
@@ -24,13 +23,11 @@ import de.amplimind.codingchallenge.utils.ApiRequestUtils
 import de.amplimind.codingchallenge.utils.SubmissionUtils
 import de.amplimind.codingchallenge.utils.ZipUtils
 import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import retrofit2.Response
 import java.util.zip.ZipInputStream
-import kotlin.math.log
 
 /**
  * Service class responsible for handling the GitHub API calls.
@@ -57,21 +54,26 @@ class GitHubService(
         val codeTreeItems: List<TreeItem> = createCodeBlobs(submitSolutionRequestDTO.zipFileContent, userEmail)
         val readmeTreeItem: TreeItem = createReadmeBlob(submitSolutionRequestDTO, userEmail)
         val readmeTreeItemList = listOf(readmeTreeItem) ?: emptyList()
-        val allTreeItems: List<TreeItem> = readmeTreeItemList  + codeTreeItems
+        val allTreeItems: List<TreeItem> = readmeTreeItemList + codeTreeItems
         val repo = userEmail.replace('@', '.')
         val gitBaseTree: Response<GetGitTreeResponse> = ApiRequestUtils.retry(5) { gitHubApiClient.getGitTree(repo, "main") }
         val baseTreeSha = gitBaseTree.body()?.sha
-        if(baseTreeSha != null) {
+        if (baseTreeSha != null) {
             val treeResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createTree(repo, CreateTreeRequest(allTreeItems, baseTreeSha)) }
             val treeSha = treeResponse.body()?.sha
-            if(treeSha != null) {
+            if (treeSha != null) {
                 val commitMessage = "submit code"
                 val committer = Committer(userEmail, userEmail)
-                val commitResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createCommit(repo, CreateCommitRequest(commitMessage, treeSha, committer)) }
+                val commitResponse =
+                    ApiRequestUtils.retry(
+                        5,
+                    ) { gitHubApiClient.createCommit(repo, CreateCommitRequest(commitMessage, treeSha, committer)) }
                 val commitSha = commitResponse.body()?.sha
-                if(commitSha != null) {
+                if (commitSha != null) {
                     val branch = "main"
-                    ApiRequestUtils.retry(5) { gitHubApiClient.updateBranchReference(repo, branch, UpdateBranchReferenceRequest(commitSha)) }
+                    ApiRequestUtils.retry(
+                        5,
+                    ) { gitHubApiClient.updateBranchReference(repo, branch, UpdateBranchReferenceRequest(commitSha)) }
                 }
             }
         }
@@ -133,14 +135,14 @@ class GitHubService(
             val treeItems: MutableList<TreeItem> = mutableListOf()
             val files: Map<String, String> = ZipUtils.unzipCode(multipartFile)
             val repoName = userEmail.replace('@', '.')
-            for((filepath, content) in files) {
+            for ((filepath, content) in files) {
                 val filePath = filepath.substringAfter("/")
                 val blob = Blob(content)
                 try {
                     val blobResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createBlob(repoName, blob) }
-                    treeItems.add(TreeItem(filePath, "100644", "blob",  blobResponse.body()?.sha))
+                    treeItems.add(TreeItem(filePath, "100644", "blob", blobResponse.body()?.sha))
                 } catch (e: Exception) {
-                    throw GitHubApiCallException("pushCode failed at file ${filepath}: " + e.message)
+                    throw GitHubApiCallException("pushCode failed at file $filepath: " + e.message)
                 }
             }
 

@@ -3,7 +3,6 @@ package de.amplimind.codingchallenge.utils
 import de.amplimind.codingchallenge.dto.request.SubmitSolutionRequestDTO
 import java.io.File
 import java.net.URI
-import java.nio.charset.Charset
 import java.util.Base64
 
 /**

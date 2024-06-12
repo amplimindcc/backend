@@ -8,7 +8,6 @@ import de.amplimind.codingchallenge.exceptions.ZipBombException
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.util.Base64
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
