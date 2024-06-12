@@ -62,7 +62,7 @@ class SecurityConfig(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val cors = CorsConfiguration()
         cors.allowedOriginPatterns = listOf("http://localhost:*") // todo: change to frontend URL
-        cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
+        cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
         cors.allowedHeaders = listOf("*")
         cors.allowCredentials = true
         val source = UrlBasedCorsConfigurationSource()
