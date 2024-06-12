@@ -15,7 +15,7 @@ import de.amplimind.codingchallenge.dto.response.UserProjectResponseDTO
 import de.amplimind.codingchallenge.exceptions.NotSubmittedException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
-import de.amplimind.codingchallenge.listener.SubmissionStatusChangedListener
+import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
 /**
  * Controller for admin related tasks.
@@ -47,7 +46,6 @@ class AdminController(
     private val userService: UserService,
     private val submissionService: SubmissionService,
     private val inviteTokenExpirationService: InviteTokenExpirationService,
-    private val submissionStatusChangedListener: SubmissionStatusChangedListener,
     private val appConfig: AppConfig,
     private val submissionRepository: SubmissionRepository,
 ) {
@@ -56,7 +54,11 @@ class AdminController(
     @PostMapping("project/add")
     fun addProject(
         @RequestBody createProjectRequest: CreateProjectRequestDTO,
-    ) = this.projectService.addProject(createProjectRequest)
+    ): ResponseEntity<Project> {
+        val createdProject = this.projectService.addProject(createProjectRequest)
+
+        return ResponseEntity.ok(createdProject)
+    }
 
     @Operation(summary = "Endpoint for fetching all projects.")
     @ApiResponse(responseCode = "200", description = "All projects were fetched successfully.")
@@ -212,17 +214,5 @@ class AdminController(
     @GetMapping("submission/all")
     fun fetchAllSubmissions(): ResponseEntity<List<SubmissionInfoResponseDTO>> {
         return ResponseEntity.ok(submissionService.fetchAllSubmissions())
-    }
-
-    @Operation(
-        summary =
-            "Subscribe to submission status." +
-                " Will return a server sent event with the submission which submission-status was changed .",
-    )
-    @ApiResponse(responseCode = "200", description = "Connection to the server has been made successfully.")
-    @GetMapping("submission/status/subscribe")
-    fun subscribeToSubmissionStatus(): SseEmitter {
-        val sseEmitter = SseEmitter(300000)
-        return this.submissionStatusChangedListener.addEmitter(sseEmitter)
     }
 }

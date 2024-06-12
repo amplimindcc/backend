@@ -36,6 +36,11 @@ Behebung (Windows):
  - Backend neustarten
 
  Docker (Backend):
+ - in den `application.properties` die Properties unter `Enable for development` auskommentieren/deaktivieren
+ - in den `application.properties` die Properties unter `Enable for image build` einkommentieren/aktivieren
+ - `gradle clean` laufen lassen
+ - `gradle bootJar` laufen lassen
  - Im Hauptordner, wo sich Dockerfile befindet, Terminal öffnen
  - Docker für Desktop muss laufen
- - docker-compose up --build
+ - `docker-compose up`
+ - `application.properties` zurücksetzen
