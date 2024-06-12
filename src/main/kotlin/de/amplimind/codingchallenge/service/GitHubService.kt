@@ -53,7 +53,7 @@ class GitHubService(
         pushWorkflow(userEmail)
         val codeTreeItems: List<TreeItem> = createCodeBlobs(submitSolutionRequestDTO.zipFileContent, userEmail)
         val readmeTreeItem: TreeItem = createReadmeBlob(submitSolutionRequestDTO, userEmail)
-        val readmeTreeItemList = listOf(readmeTreeItem) ?: emptyList()
+        val readmeTreeItemList = listOf(readmeTreeItem)
         val allTreeItems: List<TreeItem> = readmeTreeItemList + codeTreeItems
         val repo = userEmail.replace('@', '.')
         val gitBaseTree: Response<GetGitTreeResponse> = ApiRequestUtils.retry(5) { gitHubApiClient.getGitTree(repo, "main") }
@@ -92,7 +92,7 @@ class GitHubService(
             val commitMessage = "add lint.yml"
             val repoName = userEmail.replace('@', '.')
             val submissionFileWorkflow = SubmissionFile(commitMessage, lintWorkflowYml, committer)
-            var req: Response<PushFileResponse>? = null
+            val req: Response<PushFileResponse>?
             try {
                 req = ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
             } catch (e: Exception) {
@@ -112,7 +112,7 @@ class GitHubService(
             val description = "This is the submission repository of $userEmail"
             val repoName = userEmail.replace('@', '.')
             val submissionRepository = SubmissionGitHubRepository(repoName, description)
-            var req: Response<CreateRepoResponse>? = null
+            val req: Response<CreateRepoResponse>?
             try {
                 req = ApiRequestUtils.retry(5) { gitHubApiClient.createSubmissionRepository(organisation, submissionRepository) }
             } catch (e: Exception) {
@@ -184,7 +184,7 @@ class GitHubService(
             val workflowName = "lint.yml"
             val branch = "main"
             val workflowDispatch = WorkflowDispatch(branch)
-            var req: Response<Void>? = null
+            val req: Response<Void>?
             try {
                 req = ApiRequestUtils.retry(5) { gitHubApiClient.triggerWorkflow(repoName, workflowName, workflowDispatch) }
             } catch (e: Exception) {
@@ -239,7 +239,7 @@ class GitHubService(
      */
     suspend fun deleteSubmissionRepository(repoName: String): Response<Void> =
         coroutineScope {
-            var req: Response<Void>? = null
+            val req: Response<Void>?
             try {
                 req = ApiRequestUtils.retry(10) { gitHubApiClient.deleteRepository(repoName) }
             } catch (e: Exception) {
