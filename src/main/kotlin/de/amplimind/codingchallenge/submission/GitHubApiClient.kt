@@ -52,7 +52,107 @@ interface GitHubApiClient {
         @Path("repoName") repoName: String,
         @Path("artifactId") artifactId: Int,
     ): Response<ResponseBody>
+
+    // blob
+
+    @POST("/repos/amplimindcc/{repo}/git/blobs")
+    suspend fun createBlob(
+        @Path("repo") repo: String,
+        @Body blob: Blob,
+    ): Response<CreateBlobResponse>
+
+    @POST("/repos/amplimindcc/{repo}/git/trees")
+    suspend fun createTree(
+        @Path("repo") repo: String,
+        @Body tree: CreateTreeRequest
+    ): Response<CreateTreeResponse>
+
+    @POST("/repos/amplimindcc/{repo}/git/commits")
+    suspend fun createCommit(
+        @Path("repo") repo: String,
+        @Body commit: CreateCommitRequest
+    ): Response<CreateCommitResponse>
+
+    @POST("/repos/amplimindcc/{repo}/git/refs/heads/{branch}")
+    suspend fun updateBranchReference(
+        @Path("repo") repo: String,
+        @Path("branch") branch: String,
+        @Body reference: UpdateBranchReferenceRequest
+    ): Response<UpdateBranchReferenceResponse>
+
+    @GET("/repos/amplimindcc/{repo}/git/trees/{branch}")
+    suspend fun getGitTree(
+        @Path("repo") repo: String,
+        @Path("branch") branch: String
+    ): Response<GetGitTreeResponse> // Define the response model accordingly
+
+    //
+
+
 }
+
+@Serializable
+data class Blob(
+    val content: String
+)
+
+@Serializable
+data class CreateBlobResponse(
+    val sha: String,
+    val url: String
+)
+
+@Serializable
+data class TreeItem(
+    val path: String,
+    val mode: String,
+    val type: String,
+    val sha: String? = null,
+)
+
+@Serializable
+data class CreateTreeRequest(
+    val tree: List<TreeItem>,
+    val base_tree: String
+)
+
+@Serializable
+data class GetGitTreeResponse(
+    val sha: String
+)
+
+@Serializable
+data class CreateTreeResponse(
+    val sha: String
+)
+
+@Serializable
+data class CreateCommitResponse(
+    val sha: String
+)
+
+@Serializable
+data class CreateCommitRequest(
+    val message: String,
+    val tree: String,
+    val author: Committer
+)
+
+@Serializable
+data class UpdateBranchReferenceRequest(
+    val sha: String,
+    val force: Boolean = true
+)
+
+@Serializable
+data class UpdateBranchReferenceResponse(
+    val ref: String,
+    val url: String
+)
+
+//
+
+
 
 // Requests
 

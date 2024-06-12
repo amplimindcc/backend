@@ -52,7 +52,7 @@ object ZipUtils {
                 while (zipInputStream.read(buffer).also { len = it } > 0) {
                     outputStream.write(buffer, 0, len)
                 }
-                files[entry.name] = Base64.getEncoder().encodeToString(outputStream.toByteArray())
+                files[entry.name] = outputStream.toString()
             } else {
                 traverseFolder(zipInputStream, files)
             }

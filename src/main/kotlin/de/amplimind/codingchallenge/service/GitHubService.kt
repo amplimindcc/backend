@@ -6,22 +6,31 @@ import de.amplimind.codingchallenge.exceptions.GitHubApiCallException
 import de.amplimind.codingchallenge.exceptions.LinterResultNotAvailableException
 import de.amplimind.codingchallenge.exceptions.UnzipException
 import de.amplimind.codingchallenge.repository.SubmissionRepository
+import de.amplimind.codingchallenge.submission.Blob
 import de.amplimind.codingchallenge.submission.Committer
+import de.amplimind.codingchallenge.submission.CreateBlobResponse
+import de.amplimind.codingchallenge.submission.CreateCommitRequest
 import de.amplimind.codingchallenge.submission.CreateRepoResponse
+import de.amplimind.codingchallenge.submission.CreateTreeRequest
+import de.amplimind.codingchallenge.submission.GetGitTreeResponse
 import de.amplimind.codingchallenge.submission.GitHubApiClient
 import de.amplimind.codingchallenge.submission.PushFileResponse
 import de.amplimind.codingchallenge.submission.SubmissionFile
 import de.amplimind.codingchallenge.submission.SubmissionGitHubRepository
+import de.amplimind.codingchallenge.submission.TreeItem
+import de.amplimind.codingchallenge.submission.UpdateBranchReferenceRequest
 import de.amplimind.codingchallenge.submission.WorkflowDispatch
 import de.amplimind.codingchallenge.utils.ApiRequestUtils
 import de.amplimind.codingchallenge.utils.SubmissionUtils
 import de.amplimind.codingchallenge.utils.ZipUtils
 import kotlinx.coroutines.coroutineScope
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import retrofit2.Response
 import java.util.zip.ZipInputStream
+import kotlin.math.log
 
 /**
  * Service class responsible for handling the GitHub API calls.
@@ -44,10 +53,51 @@ class GitHubService(
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
     ) = coroutineScope {
-        pushCode(submitSolutionRequestDTO.zipFileContent, userEmail)
-        pushReadme(submitSolutionRequestDTO, userEmail)
         pushWorkflow(userEmail)
+        val codeTreeItems: List<TreeItem> = createCodeBlobs(submitSolutionRequestDTO.zipFileContent, userEmail)
+        val readmeTreeItem: TreeItem = createReadmeBlob(submitSolutionRequestDTO, userEmail)
+        val readmeTreeItemList = listOf(readmeTreeItem) ?: emptyList()
+        val allTreeItems: List<TreeItem> = readmeTreeItemList  + codeTreeItems
+        val repo = userEmail.replace('@', '.')
+        val gitBaseTree: Response<GetGitTreeResponse> = ApiRequestUtils.retry(5) { gitHubApiClient.getGitTree(repo, "main") }
+        val baseTreeSha = gitBaseTree.body()?.sha
+        if(baseTreeSha != null) {
+            val treeResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createTree(repo, CreateTreeRequest(allTreeItems, baseTreeSha)) }
+            val treeSha = treeResponse.body()?.sha
+            if(treeSha != null) {
+                val commitMessage = "submit code"
+                val committer = Committer(userEmail, userEmail)
+                val commitResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createCommit(repo, CreateCommitRequest(commitMessage, treeSha, committer)) }
+                val commitSha = commitResponse.body()?.sha
+                if(commitSha != null) {
+                    val branch = "main"
+                    ApiRequestUtils.retry(5) { gitHubApiClient.updateBranchReference(repo, branch, UpdateBranchReferenceRequest(commitSha)) }
+                }
+            }
+        }
     }
+
+    /**
+     * Push the linting workflow to the GitHub repository.
+     * @param userEmail the email of the user who made the submission
+     * @return the [Response<PushFileResponse>] of the GitHub api call
+     */
+    suspend fun pushWorkflow(userEmail: String): Response<PushFileResponse> =
+        coroutineScope {
+            val workflowPath = ".github/workflows/lint.yml"
+            val lintWorkflowYml = SubmissionUtils.getLintWorkflowYml()
+            val committer = Committer("kotlin backend", "kotline backend")
+            val commitMessage = "add lint.yml"
+            val repoName = userEmail.replace('@', '.')
+            val submissionFileWorkflow = SubmissionFile(commitMessage, lintWorkflowYml, committer)
+            var req: Response<PushFileResponse>? = null
+            try {
+                req = ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
+            } catch (e: Exception) {
+                throw GitHubApiCallException("pushWorkflow failed: " + e.message)
+            }
+            return@coroutineScope req
+        }
 
     /**
      * Create the GitHub submission repository.
@@ -70,80 +120,56 @@ class GitHubService(
         }
 
     /**
-     * Push the code to the GitHub repository.
+     * Create the blobs of the files to push.
      * @param multipartFile the code to push
      * @param userEmail the email of the user who made the submission
-     * @return the [List<Response<PushFileResponse>>] of the GitHub api calls
+     * @return the [List<TreeItem>] of the files to push
      */
-    suspend fun pushCode(
+    suspend fun createCodeBlobs(
         multipartFile: MultipartFile,
         userEmail: String,
-    ): List<Response<PushFileResponse>> =
+    ): List<TreeItem> =
         coroutineScope {
-            val req: List<Response<PushFileResponse>> =
-                ZipUtils.unzipCode(multipartFile).map { entry ->
-                    val filePath = entry.key.substringAfter("/")
-                    val fileContent = entry.value
-                    val repoName = userEmail.replace('@', '.')
-                    val committer = Committer(userEmail, userEmail)
-                    val commitMessage = "add code"
-                    val submissionFileCode = SubmissionFile(commitMessage, fileContent, committer)
-                    try {
-                        ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, filePath, submissionFileCode) }
-                    } catch (e: Exception) {
-                        throw GitHubApiCallException("pushCode failed at file ${entry.key}: " + e.message)
-                    }
-                }
-            return@coroutineScope req
-        }
-
-    /**
-     * Push the linting workflow to the GitHub repository.
-     * @param userEmail the email of the user who made the submission
-     * @return the [Response<PushFileResponse>] of the GitHub api call
-     */
-    suspend fun pushWorkflow(userEmail: String): Response<PushFileResponse> =
-        coroutineScope {
-            val workflowPath = ".github/workflows/lint.yml"
-            val lintWorkflowYml = SubmissionUtils.getLintWorkflowYml()
+            val treeItems: MutableList<TreeItem> = mutableListOf()
+            val files: Map<String, String> = ZipUtils.unzipCode(multipartFile)
             val repoName = userEmail.replace('@', '.')
-            val committer = Committer(userEmail, userEmail)
-            val commitMessage = "add lint.yml"
-            val submissionFileWorkflow = SubmissionFile(commitMessage, lintWorkflowYml, committer)
-            var req: Response<PushFileResponse>? = null
-            try {
-                req = ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, workflowPath, submissionFileWorkflow) }
-            } catch (e: Exception) {
-                println("caught error in pushWorkflow")
-                throw GitHubApiCallException("pushWorkflow failed: " + e.message)
+            for((filepath, content) in files) {
+                val filePath = filepath.substringAfter("/")
+                val blob = Blob(content)
+                try {
+                    val blobResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createBlob(repoName, blob) }
+                    treeItems.add(TreeItem(filePath, "100644", "blob",  blobResponse.body()?.sha))
+                } catch (e: Exception) {
+                    throw GitHubApiCallException("pushCode failed at file ${filepath}: " + e.message)
+                }
             }
-            return@coroutineScope req
+
+            return@coroutineScope treeItems
         }
 
     /**
-     * Push description of the user as the readme to the GitHub repository.
+     * Create a blob for the readme file
      * @param submitSolutionRequestDTO the request to upload the code
      * @param userEmail the email of the user who made the submission
-     * @return the [Response<PushFileResponse>] of the GitHub api call
+     * @return the [TreeItem] of the readme file
      */
-    suspend fun pushReadme(
+    suspend fun createReadmeBlob(
         submitSolutionRequestDTO: SubmitSolutionRequestDTO,
         userEmail: String,
-    ): Response<PushFileResponse> =
+    ): TreeItem =
         coroutineScope {
             val readmePath = "README.md"
             val readmeContentEncoded = SubmissionUtils.fillReadme(userEmail, submitSolutionRequestDTO)
             val repoName = userEmail.replace('@', '.')
-            val committer = Committer(userEmail, userEmail)
-            val commitMessage = "add README.md"
-            val submissionFileReadme = SubmissionFile(commitMessage, readmeContentEncoded, committer)
-            var req: Response<PushFileResponse>? = null
+            val blob = Blob(readmeContentEncoded)
+            val readmeTreeItem: TreeItem
             try {
-                req = ApiRequestUtils.retry(5) { gitHubApiClient.pushFileCall(repoName, readmePath, submissionFileReadme) }
+                val blobResponse = ApiRequestUtils.retry(5) { gitHubApiClient.createBlob(repoName, blob) }
+                readmeTreeItem = TreeItem(readmePath, "100644", "blob", blobResponse.body()?.sha)
             } catch (e: Exception) {
                 throw GitHubApiCallException("pushReadme failed: " + e.message)
             }
-            return@coroutineScope req
+            return@coroutineScope readmeTreeItem
         }
 
     /**

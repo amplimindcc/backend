@@ -8,9 +8,14 @@ import de.amplimind.codingchallenge.exceptions.TooLateSubmissionException
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
+import de.amplimind.codingchallenge.submission.CreateBlobResponse
+import de.amplimind.codingchallenge.submission.CreateCommitResponse
 import de.amplimind.codingchallenge.submission.CreateRepoResponse
+import de.amplimind.codingchallenge.submission.CreateTreeResponse
+import de.amplimind.codingchallenge.submission.GetGitTreeResponse
 import de.amplimind.codingchallenge.submission.GitHubApiClient
 import de.amplimind.codingchallenge.submission.PushFileResponse
+import de.amplimind.codingchallenge.submission.UpdateBranchReferenceResponse
 import de.amplimind.codingchallenge.utils.UserUtils
 import de.amplimind.codingchallenge.utils.ZipUtils
 import de.amplimind.codingchallenge.utils.ZipUtils.unzipCode
@@ -71,6 +76,33 @@ internal class SubmissionServiceTest {
 
     @MockK
     private lateinit var deleteRepositoryResponse: Response<Void>
+
+    @MockK
+    private lateinit var createBlobResponse: Response<CreateBlobResponse>
+
+    @MockK
+    private lateinit var blobResponse: CreateBlobResponse
+
+    @MockK
+    private lateinit var createTreeResponse: Response<CreateTreeResponse>
+
+    @MockK
+    private lateinit var treeResponse: CreateTreeResponse
+
+    @MockK
+    private lateinit var createCommitResponse: Response<CreateCommitResponse>
+
+    @MockK
+    private lateinit var commitResponse: CreateCommitResponse
+
+    @MockK
+    private lateinit var updateBranchReferenceResponse: Response<UpdateBranchReferenceResponse>
+
+    @MockK
+    private lateinit var getGitTreeResponse: Response<GetGitTreeResponse>
+
+    @MockK
+    private lateinit var gitTreeResponse: GetGitTreeResponse
 
     @MockK
     private lateinit var multipartFile: MultipartFile
@@ -166,6 +198,8 @@ internal class SubmissionServiceTest {
                 "file3" to "code3",
             )
 
+        val dummySha = "123"
+
         every { submissionRepository.findByUserEmail(any()) } returns submission
 
         mockkObject(ZipUtils)
@@ -180,6 +214,33 @@ internal class SubmissionServiceTest {
 
         coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
         every { pushFileResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns true
+
+        every { createBlobResponse.body() } returns blobResponse
+        every { blobResponse.sha } returns dummySha
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns true
+
+        every { getGitTreeResponse.body() } returns gitTreeResponse
+        every { gitTreeResponse.sha } returns dummySha
+
+        coEvery { gitHubApiClient.createTree(any(), any()) } returns createTreeResponse
+        every { createTreeResponse.isSuccessful } returns true
+
+        every { createTreeResponse.body() } returns treeResponse
+        every { treeResponse.sha } returns dummySha
+
+        coEvery { gitHubApiClient.createCommit(any(), any()) } returns createCommitResponse
+        every { createCommitResponse.isSuccessful } returns true
+
+        every { createCommitResponse.body() } returns commitResponse
+        every { commitResponse.sha } returns dummySha
+
+        coEvery { gitHubApiClient.updateBranchReference(any(), any(), any()) } returns updateBranchReferenceResponse
+        every { updateBranchReferenceResponse.isSuccessful } returns true
 
         coEvery { gitHubApiClient.triggerWorkflow(any(), any(), any()) } returns triggerWorkflowResponse
         every { triggerWorkflowResponse.isSuccessful } returns true
@@ -301,7 +362,7 @@ internal class SubmissionServiceTest {
      * Test that an exception is thrown if pushing files to the submission repository fails.
      */
     @Test
-    fun test_submit_code_failure_push_file_api_call_fails() {
+    fun test_submit_code_failure_create_blob_fails() {
         val submitSolutionRequestDTO = init_mocks_test_submit_code()
 
         every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
@@ -311,8 +372,118 @@ internal class SubmissionServiceTest {
         coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
         every { createRepoResponse.isSuccessful } returns true
 
-        coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
-        every { pushFileResponse.isSuccessful } returns false
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if getting the git tree fails
+     */
+    @Test
+    fun test_submit_code_failure_get_git_tree_fails() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if creating the git tree fails
+     */
+    @Test
+    fun test_submit_code_failure_create_tree_fails() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createTree(any(), any()) } returns createTreeResponse
+        every { createTreeResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if creating a commit fails
+     */
+    @Test
+    fun test_submit_code_failure_create_commit_fails() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createTree(any(), any()) } returns createTreeResponse
+        every { createTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createCommit(any(), any()) } returns createCommitResponse
+        every { createCommitResponse.isSuccessful } returns false
+
+        assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
+    }
+
+    /**
+     * Test that an exception is thrown if updating the branch reference fails
+     */
+    @Test
+    fun test_submit_code_failure_update_branch_reference_fails() {
+        val submitSolutionRequestDTO = init_mocks_test_submit_code()
+
+        every { gitHubApiClient.getSubmissionRepository(any()) } returns getSubmissionRepositoryCall
+        every { getSubmissionRepositoryCall.execute() } returns getSubmissionRepositoryResponse
+        every { getSubmissionRepositoryResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createSubmissionRepository(any(), any()) } returns createRepoResponse
+        every { createRepoResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createTree(any(), any()) } returns createTreeResponse
+        every { createTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createCommit(any(), any()) } returns createCommitResponse
+        every { createCommitResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.updateBranchReference(any(), any(), any()) } returns updateBranchReferenceResponse
+        every { updateBranchReferenceResponse.isSuccessful } returns false
 
         assertThrows<GitHubApiCallException> { this.submissionService.submitCode(submitSolutionRequestDTO) }
     }
@@ -333,6 +504,21 @@ internal class SubmissionServiceTest {
 
         coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
         every { pushFileResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createTree(any(), any()) } returns createTreeResponse
+        every { createTreeResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.createCommit(any(), any()) } returns createCommitResponse
+        every { createCommitResponse.isSuccessful } returns true
+
+        coEvery { gitHubApiClient.updateBranchReference(any(), any(), any()) } returns updateBranchReferenceResponse
+        every { updateBranchReferenceResponse.isSuccessful } returns true
 
         coEvery { gitHubApiClient.triggerWorkflow(any(), any(), any()) } returns triggerWorkflowResponse
         every { triggerWorkflowResponse.isSuccessful } returns false
@@ -356,6 +542,21 @@ internal class SubmissionServiceTest {
 
         coEvery { gitHubApiClient.pushFileCall(any(), any(), any()) } returns pushFileResponse
         every { pushFileResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createBlob(any(), any()) } returns createBlobResponse
+        every { createBlobResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.getGitTree(any(), any()) } returns getGitTreeResponse
+        every { getGitTreeResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createTree(any(), any()) } returns createTreeResponse
+        every { createTreeResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.createCommit(any(), any()) } returns createCommitResponse
+        every { createCommitResponse.isSuccessful } returns false
+
+        coEvery { gitHubApiClient.updateBranchReference(any(), any(), any()) } returns updateBranchReferenceResponse
+        every { updateBranchReferenceResponse.isSuccessful } returns false
 
         coEvery { gitHubApiClient.triggerWorkflow(any(), any(), any()) } returns triggerWorkflowResponse
         every { triggerWorkflowResponse.isSuccessful } returns false
