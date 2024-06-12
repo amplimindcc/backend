@@ -58,7 +58,15 @@ internal class ProjectServiceTest {
 
         val projectSlot = slot<Project>()
 
-        every { projectRepository.save(capture(projectSlot)) } returns any()
+        val savedProject =
+            Project(
+                id = 1L,
+                title = project.title,
+                description = project.description,
+                active = project.active,
+            )
+
+        every { projectRepository.save(capture(projectSlot)) } returns savedProject
 
         projectService.addProject(createProjectRequest)
 
