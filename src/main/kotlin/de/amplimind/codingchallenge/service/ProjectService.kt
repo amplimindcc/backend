@@ -22,8 +22,9 @@ class ProjectService(
     /**
      * Adds a new project.
      * @param createProjectRequest the request to create a project
+     * @return The created project
      */
-    fun addProject(createProjectRequest: CreateProjectRequestDTO) {
+    fun addProject(createProjectRequest: CreateProjectRequestDTO): Project {
         val project =
             Project(
                 description = createProjectRequest.description,
@@ -31,7 +32,8 @@ class ProjectService(
                 active = createProjectRequest.active,
             )
 
-        this.projectRepository.save(project)
+        val createdProject = this.projectRepository.save(project)
+        return createdProject
     }
 
     /**

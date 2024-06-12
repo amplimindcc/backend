@@ -16,6 +16,7 @@ import de.amplimind.codingchallenge.exceptions.NotSubmittedException
 import de.amplimind.codingchallenge.exceptions.ResourceNotFoundException
 import de.amplimind.codingchallenge.extensions.EnumExtensions.matchesAny
 import de.amplimind.codingchallenge.listener.SubmissionStatusChangedListener
+import de.amplimind.codingchallenge.model.Project
 import de.amplimind.codingchallenge.model.Submission
 import de.amplimind.codingchallenge.model.SubmissionStates
 import de.amplimind.codingchallenge.repository.SubmissionRepository
@@ -56,7 +57,11 @@ class AdminController(
     @PostMapping("project/add")
     fun addProject(
         @RequestBody createProjectRequest: CreateProjectRequestDTO,
-    ) = this.projectService.addProject(createProjectRequest)
+    ): ResponseEntity<Project> {
+        val createdProject = this.projectService.addProject(createProjectRequest)
+
+        return ResponseEntity.ok(createdProject)
+    }
 
     @Operation(summary = "Endpoint for fetching all projects.")
     @ApiResponse(responseCode = "200", description = "All projects were fetched successfully.")
