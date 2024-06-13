@@ -19,7 +19,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import java.sql.Timestamp
 
 @Configuration
 class AppConfig(
@@ -59,7 +58,7 @@ class AppConfig(
     @Bean
     fun commandLineRunner(): CommandLineRunner {
         return CommandLineRunner {
-            // TODO just some example data for us, REMOVE LATER (but move data for tests)
+            // TODO just some example data for us, REMOVE LATER
 
             val admin =
                 User(
@@ -75,49 +74,7 @@ class AppConfig(
                     role = UserRole.USER,
                 )
 
-            val initUser =
-                User(
-                    email = "init@web.de",
-                    password = null,
-                    role = UserRole.INIT,
-                )
-
-            val initUser1 =
-                User(
-                    email = "init1@web.de",
-                    password = null,
-                    role = UserRole.INIT,
-                )
-
-            val initUser2 =
-                User(
-                    email = "init2@web.de",
-                    password = null,
-                    role = UserRole.INIT,
-                )
-
-            val initUser3 =
-                User(
-                    email = "init3@web.de",
-                    password = null,
-                    role = UserRole.INIT,
-                )
-
-            val implementingUser =
-                User(
-                    email = "impl@web.de",
-                    password = passwordEncoder().encode("impl"),
-                    role = UserRole.USER,
-                )
-
-            val submittedUser =
-                User(
-                    email = "submitted@web.de",
-                    password = passwordEncoder().encode("submitted"),
-                    role = UserRole.USER,
-                )
-
-            this.userRepository.saveAll(listOf(admin, user, initUser, initUser1, initUser2, initUser3, implementingUser, submittedUser))
+            this.userRepository.saveAll(listOf(admin, user))
 
             val userSubmission =
                 Submission(
@@ -126,32 +83,7 @@ class AppConfig(
                     projectID = 1L,
                 )
 
-            val initUserSubmission =
-                Submission(
-                    userEmail = initUser.email,
-                    status = SubmissionStates.INIT,
-                    projectID = 1L,
-                )
-
-            val inImplementationSubmission =
-                Submission(
-                    userEmail = implementingUser.email,
-                    status = SubmissionStates.IN_IMPLEMENTATION,
-                    turnInDate = Timestamp(System.currentTimeMillis()),
-                    projectID = 1L,
-                    expirationDate = Timestamp(System.currentTimeMillis().plus(86400000 * 3L)),
-                )
-
-            val submittedSubmission =
-                Submission(
-                    userEmail = submittedUser.email,
-                    status = SubmissionStates.SUBMITTED,
-                    turnInDate = Timestamp(System.currentTimeMillis()),
-                    projectID = 1L,
-                    expirationDate = Timestamp(System.currentTimeMillis()),
-                )
-
-            this.submissionRepository.saveAll(listOf(inImplementationSubmission, submittedSubmission, initUserSubmission, userSubmission))
+            this.submissionRepository.saveAll(listOf(userSubmission))
 
             val project1 =
                 Project(
@@ -164,7 +96,7 @@ class AppConfig(
             val project2 =
                 Project(
                     title = "Test Project 2",
-                    description = "This is a test description",
+                    description = "This is another test description",
                     active = false,
                     version = 0,
                 )
